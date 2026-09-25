@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1536" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#100a04"/>
+      <stop offset=".18" stop-color="#2a1c0a"/>
+      <stop offset=".33" stop-color="#5c3f14"/>
+      <stop offset=".44" stop-color="#9c6f23"/>
+      <stop offset=".52" stop-color="#d9a44b"/>
+      <stop offset=".58" stop-color="#eabd6a"/>
+      <stop offset=".64" stop-color="#a97a2e"/>
+      <stop offset=".74" stop-color="#4a3211"/>
+      <stop offset=".86" stop-color="#1c1207"/>
+      <stop offset="1" stop-color="#0a0603"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#ffeaa8" stop-opacity=".95"/>
+      <stop offset=".28" stop-color="#f6c96f" stop-opacity=".55"/>
+      <stop offset=".62" stop-color="#c9873a" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#8a5620" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lampGlow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#ffe6a6" stop-opacity=".85"/>
+      <stop offset=".35" stop-color="#f2c063" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#e0a840" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="vignetteBottom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#050302" stop-opacity="0"/>
+      <stop offset=".55" stop-color="#050302" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#040201" stop-opacity=".9"/>
+    </linearGradient>
+    <linearGradient id="vignetteTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#050302" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#050302" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="edgeDark" cx=".5" cy=".5" r=".72">
+      <stop offset=".55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1536" fill="url(#sky)"/>
+
+  <!-- haze bands over the horizon -->
+  <g fill="#f3cd85" opacity=".13">
+    <ellipse cx="512" cy="700" rx="620" ry="34"/>
+    <ellipse cx="430" cy="640" rx="480" ry="22"/>
+    <ellipse cx="600" cy="760" rx="540" ry="26"/>
+  </g>
+  <g fill="#2b1c0b" opacity=".45">
+    <ellipse cx="300" cy="360" rx="360" ry="52"/>
+    <ellipse cx="760" cy="290" rx="330" ry="44"/>
+    <ellipse cx="520" cy="470" rx="420" ry="40"/>
+  </g>
+
+  <!-- sun -->
+  <circle cx="512" cy="700" r="430" fill="url(#sunGlow)"/>
+  <circle cx="512" cy="700" r="86" fill="#ffe9ad" opacity=".55"/>
+
+  <!-- far skyline -->
+  <g fill="#3a2711" opacity=".85">
+    <rect x="0" y="640" width="120" height="260"/>
+    <rect x="120" y="690" width="70" height="210"/>
+    <path d="M190 700h64v200h-64z"/>
+    <circle cx="222" cy="686" r="34"/>
+    <rect x="216" y="640" width="12" height="42"/>
+    <rect x="254" y="720" width="96" height="180"/>
+    <rect x="880" y="620" width="144" height="280"/>
+    <rect x="812" y="690" width="68" height="210"/>
+    <path d="M760 704h52v196h-52z"/>
+    <circle cx="786" cy="692" r="30"/>
+    <rect x="700" y="740" width="60" height="160"/>
+  </g>
+
+  <!-- mid skyline, darker -->
+  <g fill="#241708" opacity=".92">
+    <rect x="0" y="760" width="200" height="200"/>
+    <rect x="200" y="800" width="110" height="160"/>
+    <rect x="824" y="748" width="200" height="212"/>
+    <rect x="742" y="806" width="82" height="154"/>
+    <path d="M330 848h30v112h-30zM664 848h30v112h-30z"/>
+  </g>
+
+  <!-- bridge across the river -->
+  <g fill="#1b1107" opacity=".9">
+    <rect x="330" y="852" width="364" height="14"/>
+    <path d="M360 866h10v34h-10zM420 866h10v34h-10zM480 866h10v34h-10zM540 866h10v34h-10zM600 866h10v34h-10zM656 866h10v34h-10z"/>
+  </g>
+
+  <!-- water / street with warm reflection -->
+  <rect x="0" y="900" width="1024" height="636" fill="#0d0904"/>
+  <g fill="#e8b45c" opacity=".16">
+    <rect x="470" y="900" width="84" height="360" rx="42"/>
+    <rect x="492" y="900" width="40" height="470" rx="20"/>
+  </g>
+  <g fill="#c08a35" opacity=".1">
+    <ellipse cx="512" cy="1010" rx="300" ry="26"/>
+    <ellipse cx="512" cy="1120" rx="230" ry="20"/>
+  </g>
+
+  <!-- lampposts -->
+  <g fill="#120b05">
+    <rect x="88" y="470" width="14" height="470" rx="6"/>
+    <rect x="60" y="930" width="70" height="18" rx="8"/>
+    <path d="M70 452h50l-8 34H78z"/>
+    <rect x="82" y="424" width="26" height="30" rx="6"/>
+    <rect x="922" y="470" width="14" height="470" rx="6"/>
+    <rect x="894" y="930" width="70" height="18" rx="8"/>
+    <path d="M904 452h50l-8 34h-34z"/>
+    <rect x="916" y="424" width="26" height="30" rx="6"/>
+  </g>
+  <circle cx="95" cy="452" r="130" fill="url(#lampGlow)"/>
+  <circle cx="929" cy="452" r="130" fill="url(#lampGlow)"/>
+  <circle cx="95" cy="452" r="16" fill="#ffe6a6" opacity=".9"/>
+  <circle cx="929" cy="452" r="16" fill="#ffe6a6" opacity=".9"/>
+
+  <!-- tree canopy, top corners -->
+  <g fill="#0e0904" opacity=".95">
+    <path d="M0 0h430c-40 40-118 34-160 74-44 42-14 96-78 118-58 20-104-24-192-26z"/>
+    <ellipse cx="60" cy="120" rx="86" ry="54"/>
+    <ellipse cx="180" cy="70" rx="104" ry="56"/>
+    <ellipse cx="300" cy="40" rx="90" ry="44"/>
+    <ellipse cx="120" cy="210" rx="56" ry="34"/>
+    <path d="M1024 0H860c30 30 74 22 100 56 24 32 6 70 44 84V0z"/>
+    <ellipse cx="980" cy="96" rx="70" ry="42"/>
+  </g>
+
+  <rect width="1024" height="1536" fill="url(#vignetteTop)" opacity=".5"/>
+  <rect width="1024" height="1536" fill="url(#vignetteBottom)"/>
+  <rect width="1024" height="1536" fill="url(#edgeDark)"/>
+</svg>

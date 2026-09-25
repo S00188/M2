@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mafia — Premium Character Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:radial-gradient(1200px 600px at 50% -10%,#1c212b,#0e1013 60%);
+  min-height:100vh;color:#e8eaee;font-family:'Inter',sans-serif;padding:40px 20px
+}
+h1{text-align:center;font:900 42px/1.05 'Cinzel',serif;letter-spacing:.04em;margin-bottom:10px}
+p{text-align:center;color:#8b94a3;margin-bottom:40px}
+.grid{display:flex;flex-wrap:wrap;justify-content:center;gap:30px;max-width:1400px;margin:0 auto}
+.card-wrap{text-align:center}
+.card-wrap h3{font:600 14px 'Oswald',sans-serif;letter-spacing:.14em;text-transform:uppercase;margin:16px 0 8px;color:#fff}
+.card-wrap .faction{font-size:12px;color:#8b94a3;text-transform:uppercase;letter-spacing:.1em}
+.card{width:260px;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px #232833}
+.card svg{width:100%;height:auto;display:block}
+</style>
+</head>
+<body>
+
+<h1>🎭 PREMIUM ROLLAR</h1>
+<p>Har bir rol uchun unique premium character dizayni</p>
+
+<div class="grid" id="grid"></div>
+
+<script>
+/* =================================================================
+   PREMIUM TEXTLESS ART ENGINE — one unique character per role.
+   ================================================================= */
+
+const ART_AUX = {
+  mafia:  { g1: "#170709", g2: "#090203", glow: "#e63b4b", ring: "rgba(230,59,75,.5)",  accent: "#dcb36a", particle: "#ff8f9b" },
+  town:   { g1: "#0a1522", g2: "#040810", glow: "#3b82f6", ring: "rgba(59,130,246,.5)", accent: "#dcb36a", particle: "#8fc1ff" },
+  neutral:{ g1: "#140e20", g2: "#080510", glow: "#a06fd8", ring: "rgba(160,111,216,.5)", accent: "#5fe0c9", particle: "#d3b3ff" },
+};
+
+const ROLE_AUX = {
+  citizen:     { accent: "#7aa7f0", extra: "#dcb36a" },
+  commissioner:{ accent: "#5a9bff", extra: "#dcb36a" },
+  sergeant:    { accent: "#6f8fd8", extra: "#e6c168" },
+  doctor:      { accent: "#3ec6c6", extra: "#ffe08a" },
+  lucky:       { accent: "#4fd08e", extra: "#ffe08a" },
+  kamikaze:    { accent: "#ff9d4a", extra: "#ffe08a" },
+  don:         { accent: "#e6c168", extra: "#fff3c4" },
+  mafia:       { accent: "#e1555f", extra: "#ffd6a0" },
+  maniac:      { accent: "#ff6b6b", extra: "#ffe08a" },
+  mistress:    { accent: "#e2809f", extra: "#ffd9e3" },
+  lawyer:      { accent: "#a882e0", extra: "#e6c168" },
+  suicide:     { accent: "#9b8fd0", extra: "#c3b8ff" },
+  vagabond:    { accent: "#e0b25c", extra: "#f6dd9a" },
+};
+
+function _roleAux(id) { return ROLE_AUX[id] || { accent: "#7aa7f0", extra: "#dcb36a" }; }
+
+function artEmblemUID(id, U) {
+  const au = _roleAux(id);
+  const a = au.accent;
+  const g = au.extra;
+  const dk = "#07090d";
+  const dk2 = "#0f1319";
+  const hl = `url(#${U}hl)`;
+  const fg = `url(#${U}fglow)`;
+  const gold = "#e0b968";
+
+  let body = "";
+
+  switch (id) {
+
+    case "citizen":
+      body = `
+        <circle class="kct-halo" cx="22" cy="-10" r="15" fill="${a}" opacity="0.16"/>
+        <path d="M0 46 C-30 46 -42 22 -42 -2 C-36 -26 -20 -36 -6 -34 C-2 -42 2 -42 6 -34 C20 -36 36 -26 42 -2 C42 22 30 46 0 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <path d="M-6 -34 C-20 -46 -28 -52 -22 -64 C-15 -56 -8 -52 0 -54 C8 -52 15 -56 22 -64 C28 -52 20 -46 6 -34 Z" fill="${dk2}"/>
+        <circle cx="0" cy="-25" r="11" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <circle cx="-4" cy="-27" r="1.5" fill="${a}"/>
+        <circle cx="4" cy="-27" r="1.5" fill="${a}"/>
+        <path d="M20 -2 L20 46" stroke="${dk2}" stroke-width="4" stroke-linecap="round"/>
+        <line x1="16" y1="6" x2="24" y2="6" stroke="${gold}" stroke-width="2" opacity="0.85"/>
+        <g class="kct-lantern">
+          <line x1="20" y1="-12" x2="20" y2="-4" stroke="${gold}" stroke-width="1.6"/>
+          <rect x="15" y="-4" width="10" height="14" rx="2.5" fill="#0a0d12" stroke="${a}" stroke-width="1.3"/>
+          <rect x="17" y="-1.5" width="6" height="9" rx="1" fill="${a}" opacity="0.9"/>
+        </g>
+        <circle class="kct-glow" cx="20" cy="2" r="6" fill="${a}" opacity="0.5"/>`;
+      break;
+
+    case "commissioner":
+      body = `
+        <path d="M-2 46 C-28 46 -40 22 -42 2 C-38 -24 -26 -36 -8 -34 C-4 -40 4 -40 6 -34 C26 -34 38 -22 42 2 C40 22 28 46 2 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <circle cx="0" cy="-26" r="10" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <circle cx="-3" cy="-28" r="1.5" fill="${a}"/>
+        <circle cx="3" cy="-28" r="1.5" fill="${a}"/>
+        <path d="M-4 -30 L4 -30 L0 -40 L-4 -30 Z" fill="${dk2}"/>
+        <path d="M-16 -34 C-20 -44 -4 -50 12 -44 C20 -42 24 -38 24 -34 L-16 -34 Z" fill="${dk}"/>
+        <g class="kct-mag">
+          <circle cx="18" cy="-8" r="8" fill="none" stroke="${a}" stroke-width="2"/>
+          <circle cx="18" cy="-8" r="6" fill="${a}" opacity="0.16"/>
+          <line x1="24" y1="2" x2="31" y2="10" stroke="${gold}" stroke-width="2.2" stroke-linecap="round"/>
+        </g>
+        <g class="kct-scanwrap"><line class="kct-scan" x1="-40" y1="-46" x2="-40" y2="40" stroke="${a}" stroke-width="1" opacity="0.4"/></g>
+        <polygon class="kct-badge" points="14,10 15.8,14.6 20.6,15.2 17.3,18.4 18.4,23 14,20.6 9.6,23 10.7,18.4 7.4,15.2 12.2,14.6" fill="${gold}"/>
+        <path d="M8 28 h14 M10 32 h10" stroke="${gold}" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>`;
+      break;
+
+    case "sergeant":
+      body = `
+        <path d="M0 46 C-28 46 -40 22 -42 0 C-36 -26 -24 -36 -6 -34 C-2 -42 2 -42 6 -34 C24 -34 36 -24 42 0 C40 22 28 46 0 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <circle cx="0" cy="-26" r="10" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <circle cx="-3" cy="-28" r="1.5" fill="${a}"/>
+        <circle cx="3" cy="-28" r="1.5" fill="${a}"/>
+        <path d="M-10 -32 Q-10 -46 0 -48 Q10 -46 10 -32 Z" fill="${dk}" stroke="${a}" stroke-width="1.2"/>
+        <line x1="-12" y1="-36" x2="12" y2="-36" stroke="${a}" stroke-width="1.6" opacity="0.85"/>
+        <g class="kct-shield">
+          <path d="M0 8 L12 -2 L10 14 L0 22 L-10 14 L-12 -2 Z" fill="${dk2}" stroke="${gold}" stroke-width="1.4"/>
+          <path d="M-5 4 L5 4 M-4 10 L4 10" stroke="${gold}" stroke-width="1.5" stroke-linecap="round"/>
+        </g>
+        <line class="kct-dash" x1="-16" y1="-12" x2="16" y2="-12" stroke="${a}" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.7"/>`;
+      break;
+
+    case "doctor":
+      body = `
+        <path d="M0 46 C-28 46 -40 24 -42 2 C-38 -24 -26 -36 -8 -34 C-4 -40 4 -40 6 -34 C26 -34 36 -22 42 0 C40 24 28 46 0 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <circle cx="0" cy="-26" r="10" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <circle cx="-3" cy="-28" r="1.5" fill="${a}"/>
+        <circle cx="3" cy="-28" r="1.5" fill="${a}"/>
+        <path d="M-9 -8 C-2 -20 10 -20 12 -6 C13 2 8 10 0 12 C-8 10 -12 2 -9 -8 Z" fill="none" stroke="#1c222d" stroke-width="3"/>
+        <circle cx="0" cy="14" r="5" fill="none" stroke="${a}" stroke-width="2"/>
+        <g class="kct-cross">
+          <path d="M0 -2 V12 M-7 5 H7" stroke="${g}" stroke-width="2.4" stroke-linecap="round"/>
+        </g>
+        <path class="kct-ecg" d="M-26 -2 H-18 L-14 -8 L-10 4 L-6 -10 L-2 -2 H26" fill="none" stroke="${a}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`;
+      break;
+
+    case "lucky":
+      body = `
+        <path d="M0 46 C-28 46 -40 26 -42 6 C-36 -22 -24 -34 -8 -32 C-2 -40 2 -40 6 -34 C26 -34 38 -22 42 4 C40 24 28 46 0 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <circle cx="0" cy="-24" r="10" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <path d="M-3 -27 q3 -5 6 0 M3 -21 q3 -5 6 0" stroke="${g}" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+        <g class="kct-clover">
+          <circle cx="-7" cy="-9" r="6.5" fill="${a}" opacity="0.92"/>
+          <circle cx="7" cy="-9" r="6.5" fill="${a}" opacity="0.92"/>
+          <circle cx="-7" cy="5" r="6.5" fill="${a}" opacity="0.92"/>
+          <circle cx="7" cy="5" r="6.5" fill="${a}" opacity="0.92"/>
+          <circle cx="0" cy="-2" r="2.2" fill="${g}"/>
+          <path d="M0 5 C2 14 2 22 -2 32" stroke="${a}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        </g>
+        <g class="kct-dice">
+          <rect x="-24" y="-2" width="17" height="17" rx="3.5" fill="#0d1016" stroke="${a}" stroke-width="1.4"/>
+          <circle cx="-19" cy="3" r="1.3" fill="${a}"/>
+          <circle cx="-14" cy="3" r="1.3" fill="${a}"/>
+          <circle cx="-19" cy="9" r="1.3" fill="${a}"/>
+        </g>
+        <path class="kct-spark" d="M22 16 l1.6 3.6 3.6 1.6 -3.6 1.6 -1.6 3.6 -1.6 -3.6 -3.6 -1.6 3.6 -1.6 Z" fill="${g}"/>`;
+      break;
+
+    case "kamikaze":
+      body = `
+        <path d="M0 -26 C-26 -28 -30 6 -28 26 C-14 42 14 42 28 26 C30 6 26 -28 0 -26 Z" fill="${dk}" stroke="${a}" stroke-width="1.6"/>
+        <path d="M-8 -16 C-2 -22 6 -22 8 -14 C6 -6 -6 -6 -8 -16 Z" fill="${dk2}" opacity="0.8"/>
+        <path d="M0 -26 C-4 -34 -8 -38 0 -44 C8 -50 4 -54 0 -58" stroke="#22272f" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle class="kct-spark" cx="0" cy="-60" r="4" fill="${a}"/>
+        <line x1="-22" y1="-6" x2="22" y2="-6" stroke="${a}" stroke-width="2" opacity="0.85"/>
+        <circle cx="-12" cy="-10" r="2.4" fill="${g}" opacity="0.9"/>
+        <circle cx="12" cy="-12" r="2.4" fill="${g}" opacity="0.9"/>
+        <polygon points="0,-2 2.4,3.4 8.2,3.9 3.8,7.6 5,13.2 0,10 -5,13.2 -3.8,7.6 -8.2,3.9 -2.4,3.4" fill="${g}"/>
+        <circle class="kct-flake" cx="-8" cy="34" r="1.8" fill="${a}" opacity="0"/>
+        <circle class="kct-flake" cx="6" cy="40" r="1.8" fill="${a}" opacity="0" style="animation-delay:1.2s"/>`;
+      break;
+
+    case "don":
+      body = `
+        <path d="M0 46 C-30 46 -40 20 -40 0 C-36 -26 -24 -38 -6 -36 C-4 -44 4 -44 6 -36 C24 -38 36 -26 40 0 C40 20 30 46 0 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <circle cx="0" cy="-27" r="10" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <circle cx="-3" cy="-29" r="1.5" fill="${a}"/>
+        <circle cx="3" cy="-29" r="1.5" fill="${a}"/>
+        <path d="M-4 -30 L4 -30 L0 -38 Z" fill="${dk2}"/>
+        <path d="M-18 -34 C-20 -52 -2 -58 12 -52 C22 -48 27 -42 27 -35 L-18 -34 Z" fill="${dk}"/>
+        <line x1="-20" y1="-36" x2="28" y2="-36" stroke="${a}" stroke-width="1.5" opacity="0.6"/>
+        <path d="M0 10 L6 18 L0 26 L-6 18 Z" fill="${g}" opacity="0.9"/>
+        <g class="kct-cane"><line x1="27" y1="-2" x2="19" y2="46" stroke="${dk2}" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="28" cy="-4" r="3.2" fill="${gold}"/></g>
+        <line class="kct-smoke" x1="16" y1="0" x2="12" y2="-8" stroke="#8a93a4" stroke-width="2" stroke-linecap="round" opacity="0"/>
+        <line class="kct-smoke" x1="17" y1="3" x2="14" y2="-6" stroke="#8a93a4" stroke-width="1.6" stroke-linecap="round" opacity="0" style="animation-delay:1.6s"/>
+        <circle class="kct-core" cx="16" cy="2" r="3" fill="${g}"/>
+        <circle class="kct-ring" cx="-13" cy="2" r="3" fill="none" stroke="${gold}" stroke-width="1.6"/>`;
+      break;
+
+    case "mafia":
+      body = `
+        <path d="M-2 46 C-28 46 -40 22 -42 2 C-38 -24 -26 -36 -8 -34 C-4 -42 4 -42 8 -34 C26 -34 38 -22 42 2 C40 22 28 46 2 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <circle cx="0" cy="-27" r="10" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <circle cx="-3" cy="-29" r="1.5" fill="${a}"/>
+        <circle cx="3" cy="-29" r="1.5" fill="${a}"/>
+        <path d="M-16 -26 C-16 -40 4 -43 12 -36 C22 -32 28 -30 30 -26 L-16 -24 Z" fill="${dk}" stroke="${a}" stroke-width="1.2"/>
+        <line x1="-14" y1="-28" x2="28" y2="-27" stroke="${a}" stroke-width="1.4" opacity="0.6"/>
+        <path d="M-2 10 L4 10 L2 18 L0 22 L-2 18 Z" fill="#c93845"/>
+        <g class="kct-bat"><line x1="24" y1="18" x2="14" y2="-16" stroke="#0d0f14" stroke-width="4" stroke-linecap="round"/>
+          <line x1="25" y1="20" x2="15" y2="-14" stroke="${a}" stroke-width="1" opacity="0.6"/></g>
+        <circle class="kct-drip" cx="4" cy="34" r="2" fill="#c93845" opacity="0"/>
+        <circle class="kct-drip" cx="-8" cy="38" r="1.6" fill="#c93845" opacity="0" style="animation-delay:1.5s"/>`;
+      break;
+
+    case "maniac":
+      body = `
+        <path d="M0 46 C-26 46 -40 22 -42 0 C-36 -26 -22 -36 -8 -34 C-2 -42 2 -42 8 -34 C22 -36 36 -26 42 0 C40 22 26 46 0 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <polygon class="kct-hair" points="0,-34 4,-48 8,-36 12,-52 16,-34 10,-44 14,-46 8,-40" fill="${dk2}"/>
+        <circle cx="0" cy="-26" r="10" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <circle cx="-4" cy="-28" r="1.5" fill="${a}"/>
+        <circle class="kct-eye" cx="5" cy="-28" r="2" fill="#ff6670"/>
+        <g class="kct-blade">
+          <line x1="27" y1="16" x2="8" y2="-22" stroke="#9aa4b4" stroke-width="3" stroke-linecap="round"/>
+          <line x1="21" y1="10" x2="27" y2="16" stroke="#5b6472" stroke-width="3.4" stroke-linecap="round"/>
+        </g>
+        <circle class="kct-drop" cx="14" cy="6" r="2" fill="#ff6670" opacity="0" style="animation-delay:.9s"/>
+        <path d="M10 -22 c-8 2 -12 8 -14 16" stroke="${a}" stroke-width="1.4" fill="none" opacity="0.7"/>`;
+      break;
+
+    case "mistress":
+      body = `
+        <path d="M0 46 C-28 46 -38 20 -40 0 C-34 -32 -22 -40 -8 -38 C0 -46 8 -46 14 -40 C26 -38 34 -28 38 -6 C40 18 26 46 0 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <path class="kct-hair" d="M-2 -36 C-16 -42 -22 -28 -18 -10 C-14 8 -6 -6 -4 -22 C-8 -20 -12 -12 -8 -6 C-4 2 0 -10 -2 -22 Z" fill="${dk2}"/>
+        <circle cx="2" cy="-30" r="9" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <circle cx="0" cy="-30" r="1.5" fill="${a}"/>
+        <circle class="kct-earring" cx="-7" cy="-20" r="1.6" fill="${gold}"/>
+        <path class="kct-lips" d="M-1 -26 q2 1.6 4 0" stroke="${a}" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+        <g class="kct-rose">
+          <line x1="18" y1="10" x2="24" y2="-2" stroke="${dk2}" stroke-width="2" stroke-linecap="round"/>
+          <path d="M24 -2 C22 -10 28 -16 32 -12 C32 -6 28 -2 24 -2 Z" fill="${a}"/>
+          <path d="M25 -10 c3 -2 6 1 4 3 c-2 2 -5 0 -4 -3 Z" fill="${a}" opacity="0.85"/>
+          <circle cx="26" cy="-7" r="2" fill="${gold}"/>
+        </g>
+        <path class="kct-petal" d="M-14 8 q4 -6 8 0 q-4 6 -8 0 Z" fill="${a}" opacity="0"/>
+        <path class="kct-petal" d="M12 20 q4 -6 8 0 q-4 6 -8 0 Z" fill="${a}" opacity="0" style="animation-delay:1.6s"/>`;
+      break;
+
+    case "lawyer":
+      body = `
+        <path d="M0 46 C-26 46 -38 24 -40 4 C-34 -24 -24 -36 -8 -34 C-2 -40 2 -40 8 -34 C24 -36 34 -24 40 2 C38 22 26 46 0 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <circle cx="-8" cy="-30" r="9" fill="#161a22" stroke="${a}" stroke-width="1.4"/>
+        <path d="M-8 -40 L0 -34 L6 -46 L-8 -40 Z" fill="${dk2}" stroke="${gold}" stroke-width="1.1"/>
+        <path d="M-14 -28 L-2 -26 M-13 -22 L-2 -22" stroke="${a}" stroke-width="1.4" opacity="0.75"/>
+        <g class="kct-scales">
+          <line x1="-30" y1="-6" x2="4" y2="-6" stroke="${a}" stroke-width="1.6"/>
+          <line x1="-13" y1="-6" x2="-13" y2="4" stroke="${a}" stroke-width="1.6"/>
+          <path d="M-22 -9 C-27 -9 -30 -5 -28 -2 L-18 6 Z" fill="#0d1016" stroke="${a}" stroke-width="1.2"/>
+          <path d="M-12 6 L-4 -2 C-1 -5 1 -5 4 -2 L12 6 Z" fill="none"/>
+        </g>
+        <rect class="kct-case" x="10" y="10" width="20" height="14" rx="2.5" fill="#0d1016" stroke="${a}" stroke-width="1.3"/>
+        <path d="M16 10 V6 H24 V10" stroke="${a}" stroke-width="1.2" fill="none"/>
+        <circle cx="20" cy="17" r="3.4" fill="${gold}" opacity="0.9"/>
+        <circle class="kct-quill" cx="20" cy="-22" r="1.6" fill="${a}" opacity="0"/>
+        <path d="M8 -18 l3 -1.5 -2.5 1.5 Z" fill="${a}"/>`;
+      break;
+
+    case "suicide":
+      body = `
+        <path d="M0 -72 C-5 -66 -5 -60 -1 -57 C3 -54 3 -48 -1 -44" stroke="#3a3f4c" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <g class="kct-sway">
+          <path d="M0 -40 C-24 -44 -34 -20 -36 2 C-32 -22 -22 -40 -2 -40 C6 -40 6 -40 2 -40 C22 -40 32 -22 36 2 C34 -20 24 -40 0 -40 Z" fill="${dk}" opacity="0.95"/>
+          <circle cx="0" cy="-34" r="9" fill="#10141a"/>
+          <circle cx="-3.5" cy="-36" r="1.8" fill="none" stroke="${a}" stroke-width="1"/>
+          <circle cx="3.5" cy="-36" r="1.8" fill="none" stroke="${a}" stroke-width="1"/>
+          <path d="M-3 -30 Q0 -28 3 -30" stroke="#3a3f4c" stroke-width="1.2" fill="none"/>
+        </g>
+        <path d="M-34 30 L34 30 M30 38 L-30 38" stroke="${a}" stroke-width="1.6" opacity="0.5"/>
+        <circle class="kct-ember" cx="-20" cy="18" r="1.4" fill="${a}" opacity="0"/>
+        <circle class="kct-ember" cx="22" cy="12" r="1.4" fill="${a}" opacity="0"/>`;
+      break;
+
+    case "vagabond":
+      body = `
+        <path d="M0 46 C-28 46 -40 22 -42 -2 C-36 -26 -24 -36 -8 -34 C-2 -42 2 -42 8 -34 C24 -36 36 -26 42 -2 C40 22 28 46 0 46 Z" fill="${dk}" stroke="${a}" stroke-opacity="0.35" stroke-width="1"/>
+        <rect x="-32" y="-18" width="13" height="16" rx="3" fill="${dk2}" stroke="${a}" stroke-width="1.1" opacity="0.9"/>
+        <circle cx="0" cy="-27" r="10" fill="#161a22" stroke="${a}" stroke-width="1.5"/>
+        <circle cx="-3" cy="-29" r="1.5" fill="${a}"/>
+        <circle cx="3" cy="-29" r="1.5" fill="${a}"/>
+        <path d="M-14 -30 C-20 -34 -12 -42 -2 -40 C4 -41 8 -38 8 -32 L-14 -30 Z" fill="${dk}"/>
+        <line x1="24" y1="2" x2="16" y2="46" stroke="#0d1016" stroke-width="3" stroke-linecap="round"/>
+        <g class="kct-wolf">
+          <path d="M22 22 C30 20 34 27 31 32 C24 36 18 32 22 22 Z" fill="${dk2}"/>
+          <path d="M28 22 l2.5 -4 2 3.5 Z" fill="${a}"/>
+          <circle cx="27" cy="27" r="1.3" fill="${a}"/>
+          <path d="M34 31 c6 2 8 6 8 6" stroke="${dk2}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        </g>
+        <ellipse class="kct-print" cx="-26" cy="30" rx="3.4" ry="2.2" fill="${a}" opacity="0"/>
+        <ellipse class="kct-print" cx="-32" cy="40" rx="3.4" ry="2.2" fill="${a}" opacity="0"/>`;
+      break;
+
+    default:
+      body = `<circle class="kct-dot" cx="0" cy="0" r="40" fill="${fg}"/>`;
+  }
+
+  body += `<ellipse cx="0" cy="50" rx="46" ry="9" fill="#000000" opacity="0.34"/>`;
+
+  return body;
+}
+
+function roleAnim(id) {
+  switch (id) {
+    case "citizen":
+      return `
+        .kct-halo{animation:kct-halo 3s ease-in-out infinite}
+        @keyframes kct-halo{0%,100%{opacity:.10;transform:scale(1)}50%{opacity:.28;transform:scale(1.25)}}
+        .kct-lantern{animation:kct-lant 2.4s ease-in-out infinite}
+        @keyframes kct-lant{0%,100%{filter:brightness(1)}50%{filter:brightness(1.55)}}
+        .kct-glow{animation:kct-glowk 2.4s ease-in-out infinite;transform-origin:20px 2px}
+        @keyframes kct-glowk{0%,100%{opacity:.28;transform:scale(1)}50%{opacity:.75;transform:scale(1.5)}}`;
+    case "commissioner":
+      return `
+        .kct-scan{animation:kct-scanx 3.6s ease-in-out infinite}
+        @keyframes kct-scanx{0%,100%{transform:translateX(0)}50%{transform:translateX(72px)}}
+        .kct-mag{animation:kct-magk 3s ease-in-out infinite}
+        @keyframes kct-magk{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+        .kct-badge{animation:kct-badk 2.2s ease-in-out infinite}
+        @keyframes kct-badk{0%,100%{opacity:.75}50%{opacity:1;filter:drop-shadow(0 0 4px ${_roleAux(id).accent})}}`;
+    case "sergeant":
+      return `
+        .kct-shield{animation:kct-shik .9s ease-in-out infinite}
+        @keyframes kct-shik{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+        .kct-dash{animation:kct-dashk 3.2s linear infinite}
+        @keyframes kct-dashk{to{stroke-dashoffset:-16}}`;
+    case "doctor":
+      return `
+        .kct-cross{animation:kct-cros 1s ease-in-out infinite;transform-origin:0px 5px}
+        @keyframes kct-cros{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.22);opacity:1}}
+        .kct-ecg{stroke-dasharray:110;stroke-dashoffset:110;animation:kct-ecgk 3.2s linear infinite}
+        @keyframes kct-ecgk{0%{stroke-dashoffset:110}60%{stroke-dashoffset:0}100%{stroke-dashoffset:-110}}`;
+    case "lucky":
+      return `
+        .kct-clover{animation:kct-clok 10s linear infinite;transform-origin:0 2px}
+        @keyframes kct-clok{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        .kct-spark{animation:kct-spark 2s ease-in-out infinite}
+        @keyframes kct-spark{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.25)}}
+        .kct-dice{animation:kct-dsky 6s ease-in-out infinite}
+        @keyframes kct-dsky{0%,92%,100%{transform:translateX(0)}95%{transform:translateX(-3px)}98%{transform:translateX(2px)}}`;
+    case "kamikaze":
+      return `
+        .kct-spark{animation:kct-spkk .5s ease-in-out infinite}
+        @keyframes kct-spkk{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.6)}}
+        .kct-flake{animation:kct-flk 2.4s ease-in infinite}
+        @keyframes kct-flk{0%{opacity:0;transform:translateY(0)}20%{opacity:.9}100%{opacity:0;transform:translateY(-26px)}}`;
+    case "don":
+      return `
+        .kct-smoke{animation:kct-smk 3.2s ease-in infinite}
+        @keyframes kct-smk{0%{opacity:0;transform:translate(0,0) scale(1)}30%{opacity:.5}100%{opacity:0;transform:translate(8px,-22px) scale(1.8)}}
+        .kct-ring{animation:kct-ring 2.4s ease-in-out infinite;transform-origin:-13px 2px}
+        @keyframes kct-ring{0%,100%{transform:rotate(0deg);filter:drop-shadow(0 0 2px ${_roleAux(id).accent})}50%{transform:rotate(12deg);filter:drop-shadow(0 0 7px ${_roleAux(id).extra})}}
+        .kct-core{animation:kct-cores 3.4s ease-in-out infinite}
+        @keyframes kct-cores{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}`;
+    case "mafia":
+      return `
+        .kct-bat{animation:kct-batk 3s ease-in-out infinite;transform-origin:20px 0}
+        @keyframes kct-batk{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-9deg) translateX(-2px)}}
+        .kct-drip{animation:kct-dripk 3.4s ease-in infinite}
+        @keyframes kct-dripk{0%{opacity:0;transform:translateY(0)}40%{opacity:.95}100%{opacity:0;transform:translateY(16px)}}`;
+    case "maniac":
+      return `
+        .kct-blade{animation:kct-blak .14s steps(2) infinite}
+        @keyframes kct-blak{0%,100%{opacity:1;transform:translateY(0)}50%{opacity:.55;transform:translateY(1px)}}
+        .kct-eye{animation:kct-eyek 1.6s ease-in-out infinite}
+        @keyframes kct-eyek{0%,100%{opacity:.6}50%{opacity:1;filter:drop-shadow(0 0 4px ${_roleAux(id).accent})}}
+        .kct-drop{animation:kct-drop 2.6s ease-in infinite}
+        @keyframes kct-drop{0%{opacity:0;transform:translate(0,0)}40%{opacity:1}100%{opacity:0;transform:translate(-6px,18px)}}`;
+    case "mistress":
+      return `
+        .kct-hair{animation:kct-hair 5s ease-in-out infinite}
+        @keyframes kct-hair{0%,100%{transform:rotate(0deg)}50%{transform:rotate(2deg)}}
+        .kct-petal{animation:kct-petal 5s ease-in infinite}
+        @keyframes kct-petal{0%{opacity:0;transform:translate(0,0) rotate(0deg)}15%{opacity:.9}100%{opacity:0;transform:translate(6px,44px) rotate(80deg)}}
+        .kct-earring{animation:kct-eak 2s ease-in-out infinite}
+        @keyframes kct-eak{0%,100%{opacity:.6}50%{opacity:1;filter:drop-shadow(0 0 3px ${_roleAux(id).extra})}}`;
+    case "lawyer":
+      return `
+        .kct-scales{animation:kct-sclk 4s ease-in-out infinite;transform-origin:-13px -6px}
+        @keyframes kct-sclk{0%,15%,100%{transform:rotate(0deg)}55%{transform:rotate(-4deg)}75%{transform:rotate(3deg)}}
+        .kct-quill{animation:kct-quilk 2.8s ease-in infinite}
+        @keyframes kct-quilk{0%{opacity:0;transform:translate(0,0)}30%{opacity:.9}100%{opacity:0;transform:translate(6px,20px)}}`;
+    case "suicide":
+      return `
+        .kct-sway{animation:kct-swayk 5s ease-in-out infinite;transform-origin:0 -60px}
+        @keyframes kct-swayk{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
+        .kct-ember{animation:kct-emb 3.6s ease-in infinite}
+        @keyframes kct-emb{0%{opacity:0;transform:translateY(0)}40%{opacity:.8}100%{opacity:0;transform:translateY(-18px)}}`;
+    case "vagabond":
+      return `
+        .kct-wolf{animation:kct-wolk 2.2s ease-in-out infinite}
+        @keyframes kct-wolk{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+        .kct-print{animation:kct-prk 4s ease-in infinite}
+        @keyframes kct-prk{0%{opacity:0}30%{opacity:.7}100%{opacity:0}}`;
+    default:
+      return `
+        .kct-dot{animation:kct-dot 2.4s ease-in-out infinite}
+        @keyframes kct-dot{0%,100%{opacity:.5}50%{opacity:1}}`;
+  }
+}
+
+function cardSceneUID(r, U) {
+  const a = ART_AUX[r.fac] || ART_AUX.town;
+  const au = _roleAux(r.id);
+  const char = artEmblemUID(r.id, U);
+  return `<svg viewBox="0 0 300 450" width="300" height="450" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="${U}bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${a.g1}"/><stop offset="0.55" stop-color="${a.g2}"/><stop offset="1" stop-color="#04050a"/>
+    </linearGradient>
+    <radialGradient id="${U}core" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="${a.glow}"/><stop offset="1" stop-color="${a.glow}" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="${U}fglow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="${au.accent}"/><stop offset="1" stop-color="${a.glow}"/>
+    </radialGradient>
+    <linearGradient id="${U}hl" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${au.accent}"/><stop offset="0.5" stop-color="${a.glow}"/><stop offset="1" stop-color="${au.accent}"/>
+    </linearGradient>
+    <radialGradient id="${U}vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.5" stop-color="transparent"/><stop offset="1" stop-color="#000" stop-opacity="0.66"/>
+    </radialGradient>
+  </defs>
+  <style>
+    @keyframes kfloat{0%{transform:translateY(0);opacity:0}15%{opacity:.7}85%{opacity:.5}100%{transform:translateY(-130px);opacity:0}}
+    @keyframes kspin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes kspinr{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}
+    @keyframes kpulse{0%,100%{opacity:.32}50%{opacity:.85}}
+    .kf{animation:kfloat 5s linear infinite}
+    .ks{animation:kspin 36s linear infinite;transform-origin:150px 200px}
+    .ksr{animation:kspinr 26s linear infinite;transform-origin:150px 200px}
+    .kg{animation:kpulse 3s ease-in-out infinite}
+    ${roleAnim(r.id)}
+  </style>
+  <rect width="300" height="450" fill="url(#${U}bg)"/>
+  <circle cx="150" cy="182" r="250" fill="url(#${U}core)" class="kg"/>
+  <ellipse cx="150" cy="392" rx="118" ry="16" fill="#000000" opacity="0.35"/>
+  <line x1="26" y1="360" x2="274" y2="360" stroke="${au.accent}" stroke-width="1" opacity="0.22"/>
+  <g class="ks" opacity="0.32">
+    <circle cx="150" cy="210" r="152" fill="none" stroke="${a.ring}" stroke-width="1.2" stroke-dasharray="8 18"/>
+    <circle cx="150" cy="210" r="118" fill="none" stroke="${a.ring}" stroke-width="1" stroke-dasharray="3 10"/>
+  </g>
+  <g class="ksr" opacity="0.28">
+    <circle cx="150" cy="210" r="180" fill="none" stroke="${a.ring}" stroke-width="0.8" stroke-dasharray="2 16"/>
+  </g>
+  <g opacity="1" style="transform:translate(150px,186px)">${char}</g>
+  <circle cx="46" cy="96" r="3" fill="${a.particle}" class="kf" style="animation-delay:0s"/>
+  <circle cx="250" cy="140" r="2.4" fill="${a.particle}" class="kf" style="animation-delay:0.9s"/>
+  <circle cx="92" cy="170" r="2.2" fill="${a.particle}" class="kf" style="animation-delay:1.7s"/>
+  <circle cx="206" cy="88" r="2.8" fill="${a.particle}" class="kf" style="animation-delay:2.4s"/>
+  <circle cx="150" cy="150" r="1.6" fill="${au.accent}" class="kf" style="animation-delay:3.1s"/>
+  <circle cx="30" cy="230" r="2.2" fill="${a.particle}" class="kf" style="animation-delay:0.45s"/>
+  <circle cx="270" cy="224" r="2.6" fill="${a.particle}" class="kf" style="animation-delay:1.2s"/>
+  <circle cx="122" cy="70" r="1.8" fill="${a.particle}" class="kf" style="animation-delay:2s"/>
+  <rect width="300" height="450" fill="url(#${U}vig)"/>
+  <rect x="3" y="3" width="294" height="444" fill="none" stroke="${a.ring}" stroke-width="2" opacity="0.4"/>
+</svg>`;
+}
+
+/* ========= MAIN RENDER ========= */
+const ROLES = [
+  {id:'citizen',fac:'town',name:'Fuqaro'},
+  {id:'commissioner',fac:'town',name:'Komissar'},
+  {id:'sergeant',fac:'town',name:'Sargerd'},
+  {id:'doctor',fac:'town',name:'Doktor'},
+  {id:'lucky',fac:'town',name:'Omadli'},
+  {id:'kamikaze',fac:'town',name:'Kamikadze'},
+  {id:'don',fac:'mafia',name:'Don'},
+  {id:'mafia',fac:'mafia',name:'Mafiya'},
+  {id:'maniac',fac:'neutral',name:'Maniak'},
+  {id:'mistress',fac:'neutral',name:'Qizil'},
+  {id:'lawyer',fac:'neutral',name:'Advokat'},
+  {id:'suicide',fac:'neutral',name:'Intiharchi'},
+  {id:'vagabond',fac:'neutral',name:'Vagabund'},
+];
+const FACTION_LABELS = {town:'Shahar',mafia:'Mafiya',neutral:'Neytral'};
+const grid = document.getElementById('grid');
+ROLES.forEach((r,i)=>{
+  const wrap = document.createElement('div');
+  wrap.className = 'card-wrap';
+  wrap.innerHTML = `<div class="card">${cardSceneUID(r,'c'+i)}</div><h3>${r.name}</h3><span class="faction">${FACTION_LABELS[r.fac]}</span>`;
+  grid.appendChild(wrap);
+});
+</script>
+
+</body>
+</html>
