@@ -513,9 +513,10 @@ async def stop_in_group(message: Message) -> None:
         return
 
     host_telegram_id = engine.state.players[engine.state.host_id].telegram_user_id
-    if user_id != host_telegram_id and not await is_group_admin(chat_id, user_id):
+    is_bot_admin = await admin_service.is_admin(user_id)
+    if user_id != host_telegram_id and not await is_group_admin(chat_id, user_id) and not is_bot_admin:
         await message.reply(
-            "⛔ Faqat guruh administratorlari yoki o'yinni boshlagan foydalanuvchi "
+            "⛔ Faqat guruh administratorlari, bot adminlari yoki o'yinni boshlagan foydalanuvchi "
             "/stop buyrug'idan foydalana oladi."
         )
         return
