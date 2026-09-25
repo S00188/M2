@@ -920,7 +920,13 @@ class GameEngine:
     # helpers
     # ----------------------------------------------------------------
 
-    def _require_host(self, player_id: str) -> PlayerState:
+    def _require_host(self, player_id: Optional[str]) -> Optional[PlayerState]:
+        # None means an already-authorized admin/system call (host_id=None
+        # is the convention every admin route/handler already uses for
+        # "_require_host_or_system", and start_game/set_bot_role now accept
+        # it too so a bot admin can act exactly like the host).
+        if player_id is None:
+            return None
         if player_id != self.state.host_id:
             raise EngineError("Only the host can do that")
         return self.state.players[player_id]

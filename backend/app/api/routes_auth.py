@@ -31,8 +31,9 @@ class TelegramLoginResponse(BaseModel):
     # — this flag is a display convenience, not the authorization itself.
     # True for both super admins and AdminUser panel admins.
     is_bot_admin: bool = False
-    # True only for the bot owner (settings.admin_telegram_ids) — the few
-    # routes still gated by require_bot_admin (live game control) are theirs.
+    # True only for the bot owner (settings.admin_telegram_ids). Live game
+    # control (require_bot_admin) now works for every bot admin, so this
+    # flag is only used to distinguish the owner in the admin panel UI.
     is_super_admin: bool = False
     # The permissions this admin holds (module-scoped keys), for UI
     # labelling only. Always empty for non-admins; super admins report all.

@@ -30,16 +30,16 @@ async def require_telegram_id(authorization: str | None = Header(default=None)) 
     return user_id
 
 
-def require_bot_admin(telegram_user_id: int = Depends(require_telegram_id)) -> int:
-    """Dependency for the bot-owner-only live-ops routes in routes_admin.py
-    (force-advance, terminate, practice games, ...). Delegates the actual
-    "is this a super admin" check to app.services.admin_service so there is
-    exactly one place that answers that question — this used to re-check
-    settings.admin_telegram_ids independently, which was the same rule
-    copy-pasted into a second spot."""
+async def require_bot_admin(telegram_user_id: int = Depends(require_telegram_id)) -> int:
+    """Dependency for the live-ops routes in routes_admin.py (force-advance,
+    terminate, practice games, ...). Every bot admin passes — super admins
+    from settings.admin_telegram_ids always, and AdminUser panel admins too
+    (they get every in-game control, per product request). Delegates the
+    actual check to app.services.admin_service so there is exactly one place
+    that answers that question."""
     from app.services import admin_service  # local import: avoids a cycle,
                                              # since admin_service itself
                                              # depends on this module.
-    if not admin_service.is_super_admin(telegram_user_id):
+    if not await admin_service.is_admin(telegram_user_id):
         raise HTTPException(status_code=403, detail="Siz bot admini emassiz")
     return telegram_user_id

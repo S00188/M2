@@ -120,10 +120,14 @@ async def join_game(game_id: str, body: JoinGameRequest, telegram_user_id: int =
 
 @router.post("/{game_id}/start")
 async def start_game(game_id: str, telegram_user_id: int = Depends(require_telegram_id)):
+    from app.services import admin_service
     try:
         engine = registry.get(game_id)
         player_id = engine.find_player_id(telegram_user_id)
-        if not player_id:
+        # The host starts via their own player_id; any bot admin may start a
+        # lobby even when someone else created it (player_id=None → machine
+        # is treated as "already authorized" by the engine).
+        if not player_id and not await admin_service.is_admin(telegram_user_id):
             raise HTTPException(403, "You are not in this game")
         engine.start_game(player_id)
     except KeyError:
@@ -150,9 +154,16 @@ async def get_state(game_id: str, telegram_user_id: int = Depends(require_telegr
 
 @router.post("/{game_id}/kick/{target_id}")
 async def kick_player(game_id: str, target_id: str, telegram_user_id: int = Depends(require_telegram_id)):
+    from app.services import admin_service
     try:
         engine = registry.get(game_id)
         host_id = engine.find_player_id(telegram_user_id)
+        # host_id=None is how the engine sees an already-authorized admin/system
+        # call, so only a bot admin (or a player, whose host_id the engine
+        # re-checks) may reach kick_player from here — otherwise any logged-in
+        # user could kick a lobby empty just by knowing a game_id.
+        if host_id is None and not await admin_service.is_admin(telegram_user_id):
+            raise HTTPException(403, "You are not in this game")
         engine.kick_player(host_id, target_id)
     except KeyError:
         raise HTTPException(404, "Game no longer exists")

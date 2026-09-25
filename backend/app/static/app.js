@@ -1639,7 +1639,8 @@ function renderLobbyScreen(s) {
 
   const enough = count >= 4;
   main.textContent = t("lobby_start_btn");
-  if (iAmHost) {
+  // Any bot admin can start the match even when someone else is the host.
+  if (iAmHost || isBotAdmin) {
     startBtn.disabled = !enough;
     sub.textContent = enough ? t("lobby_ready_hint") : `${t("lobby_start_hint")} (${count}/4)`;
   } else {
@@ -1661,9 +1662,11 @@ function renderBotRolePickers(s) {
   const roleCount = admin.role_count || {};
   const me = s.me || {};
   const isHost = me.player_id === s.host_id;
-  const bots = s.players.filter((p) => p.is_bot || p.player_id === s.host_id);
+  // Admins preselect bot roles too — the server treats them like the host.
+  const canControl = isHost || isBotAdmin;
+  const bots = s.players.filter((p) => p.is_bot || (isHost && p.player_id === s.host_id));
 
-  const show = isHost && s.phase === "lobby" && bots.length && roles.length;
+  const show = canControl && s.phase === "lobby" && bots.length && roles.length;
   box.style.display = show ? "" : "none";
   if (!show) return;
 
@@ -2838,8 +2841,8 @@ function openAdminPanel(opts) {
   adminStandalone = !!(opts && opts.standalone);
   if (adminStandalone) establishRoot("admin");
   const modeSwitch = document.getElementById("adminModeSwitch");
-  if (modeSwitch) modeSwitch.style.display = isSuperAdmin ? "" : "none";
-  if (!isSuperAdmin && adminMode === "control") adminMode = "panel";
+  if (modeSwitch) modeSwitch.style.display = isBotAdmin ? "" : "none";
+  if (!isBotAdmin && adminMode === "control") adminMode = "panel";
   applyAdminCapabilities();
   go("admin");
   adminTab(adminMode === "control"
@@ -3228,6 +3231,7 @@ function renderAdminGameDetail(g) {
         <div class="ap-stat"><b>${g.night_number}</b><span>Kecha</span></div>
         <div class="ap-stat"><b>${g.day_number}</b><span>Kun</span></div>
       </div>
+      ${inLobby ? `<button class="ap-btn gold" style="margin-top:12px" ${g.players.length < 4 ? "disabled" : ""} onclick="adminStartGame('${g.game_id}')">O'yinni boshlash</button>` : ""}
       <div class="ap-btnrow" style="margin-top:14px">
         <button class="ap-btn dark" ${inLobby ? "disabled" : ""} onclick="adminForceAdvance('${g.game_id}')">Keyingi bosqich</button>
         <button class="ap-btn dark" ${inLobby ? "disabled" : ""} onclick="adminExtendTimer('${g.game_id}')">+30 soniya</button>
@@ -3737,6 +3741,14 @@ function adminTerminateBotGame(gameId_) {
 }
 
 // ------------------------------------------------------- match actions ---
+
+async function adminStartGame(gameId) {
+  try {
+    await api(`/games/${gameId}/start`, { method: "POST" });
+    toast("O'yin boshlandi");
+    await adminOpenGame(gameId);
+  } catch (e) { toast(e.message); }
+}
 
 async function adminForceAdvance(gameId) {
   try {

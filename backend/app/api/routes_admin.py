@@ -1,10 +1,11 @@
 """
-The bot owner's global admin panel — deliberately separate from any single
-match's host_id. Every route here is gated by require_bot_admin (checked
-against settings.admin_telegram_ids), not by being "in" a particular game
-at all, so the bot owner can see and manage every currently-running match
-across every Telegram group, plus aggregate stats, without ever having
-joined any of them as a player.
+The bot admins' global live-ops panel — deliberately separate from any
+single match's host_id. Every route here is gated by require_bot_admin
+(any bot admin: super admin from settings.admin_telegram_ids, or an
+AdminUser panel admin), not by being "in" a particular game at all, so an
+admin can see and manage every currently-running match across every
+Telegram group, plus aggregate stats, without ever having joined any of
+them as a player.
 
 The state-mutating endpoints are thin wrappers around the same GameEngine
 methods the per-match host's WebSocket messages already call

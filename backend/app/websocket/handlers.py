@@ -61,6 +61,13 @@ async def game_websocket(websocket: WebSocket, game_id: str, token: str = Query(
         await websocket.close(code=4403)
         return
 
+    # Bot admins are as powerful as the host on this connection: the
+    # dispatcher below passes player_id=None (= "already authorized") for
+    # their start/admin actions, so they can act even when someone else
+    # started the game.
+    from app.services import admin_service
+    is_admin = await admin_service.is_admin(telegram_user_id)
+
     await manager.connect(game_id, player_id, websocket)
     engine.state.players[player_id].connected = True
     recent_messages = deque()
@@ -88,7 +95,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, token: str = Query(
             except (ValueError, RecursionError):
                 await manager.send_personal(game_id, player_id, {"type": "error", "message": "Invalid JSON"})
                 continue
-            await _handle_message(game_id, engine, player_id, msg)
+            await _handle_message(game_id, engine, player_id, msg, is_admin=is_admin)
             await manager.broadcast_state(game_id, engine)
             await notify_group_if_phase_changed(engine)
             await notify_players_outcome_messages(engine)
@@ -112,7 +119,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, token: str = Query(
             await manager.broadcast_state(game_id, engine)
 
 
-async def _handle_message(game_id: str, engine, player_id: str, msg: dict) -> None:
+async def _handle_message(game_id: str, engine, player_id: str, msg: dict, *, is_admin: bool = False) -> None:
     if not isinstance(msg, dict) or not isinstance(msg.get("type"), str):
         await manager.send_personal(game_id, player_id, {"type": "error", "message": "Invalid message"})
         return
@@ -157,17 +164,17 @@ async def _handle_message(game_id: str, engine, player_id: str, msg: dict) -> No
         elif msg_type == "mafia_chat_message":
             engine.send_mafia_chat_message(player_id, msg.get("text", ""))
         elif msg_type == "start_game":
-            engine.start_game(player_id)
+            engine.start_game(None if is_admin else player_id)
         elif msg_type == "admin_update_settings":
-            engine.update_settings(player_id, msg.get("settings") or {})
+            engine.update_settings(None if is_admin else player_id, msg.get("settings") or {})
         elif msg_type == "admin_force_advance":
-            engine.force_advance_phase(player_id)
+            engine.force_advance_phase(None if is_admin else player_id)
         elif msg_type == "admin_extend_timer":
-            engine.extend_current_phase(player_id, msg.get("seconds", 30))
+            engine.extend_current_phase(None if is_admin else player_id, msg.get("seconds", 30))
         elif msg_type == "admin_remove_player":
-            engine.admin_remove_player(player_id, msg.get("target_id"))
+            engine.admin_remove_player(None if is_admin else player_id, msg.get("target_id"))
         elif msg_type == "set_bot_role":
-            engine.set_bot_role(player_id, msg.get("target_id"), msg.get("role"))
+            engine.set_bot_role(None if is_admin else player_id, msg.get("target_id"), msg.get("role"))
         else:
             await manager.send_personal(game_id, player_id, {"type": "error", "message": "Unknown action"})
     except EngineError as e:
