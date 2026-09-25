@@ -2441,8 +2441,8 @@ function deathReasonUz(reason) {
 function renderOutcomeScreen(s, opts) {
   const heroEl = document.getElementById("outcomeHero");
   const extraEl = document.getElementById("outcomeExtra");
-  const titleEl = document.getElementById("outcomeTitle");
-  const introEl = document.getElementById("outcomeIntro");
+  const titleEl = document.getElementById("outcomePhaseTitle");
+  const introEl = document.getElementById("outcomePhaseSub");
   const continueBtn = document.getElementById("outcomeContinueBtn");
   continueBtn.disabled = false;
   extraEl.innerHTML = "";
@@ -2478,6 +2478,7 @@ function renderOutcomeScreen(s, opts) {
     }
     continueBtn.onclick = () => { go("day"); };
     continueBtn.textContent = "Davom etish";
+    startCountdown(s.phase_ends_in, ["outcomeTimer"]);
     return;
   }
 
@@ -2556,7 +2557,9 @@ function renderOutcomeScreen(s, opts) {
   }
 
   extraEl.innerHTML = `<div class="orow">${rosterHtml}</div><div class="card oresults" style="margin-top:10px">${resultsHtml}</div>${heroHtml}${wordsHtml}`;
-  if (document.getElementById("lastWordsTimer")) startCountdown(s.phase_ends_in, ["lastWordsTimer"]);
+  const timerIds = ["outcomeTimer"];
+  if (document.getElementById("lastWordsTimer")) timerIds.push("lastWordsTimer");
+  startCountdown(s.phase_ends_in, timerIds);
   continueBtn.textContent = "Keyingi tun avtomatik boshlanadi";
   continueBtn.disabled = true;
   continueBtn.onclick = null;

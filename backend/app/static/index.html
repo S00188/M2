@@ -487,7 +487,8 @@ body.lobby-view .rolefab{display:none!important}
 .rolesheet-close{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--muted);display:flex;align-items:center;justify-content:center}
 .rolesheet-close .icon{width:17px;height:17px;stroke-width:2}
 
-button:focus-visible,.row:focus-visible,.rolecell:focus-visible{outline:2px solid var(--town);outline-offset:2px}
+button:focus,a:focus,input:focus,textarea:focus,select:focus{outline:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.row:focus-visible,.rolecell:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--town-hi)}
 .btn:disabled,.btn.disabled{opacity:.45;pointer-events:none}
 .waitnote{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13px;padding:14px 0}
 .dotpulse{width:6px;height:6px;border-radius:50%;background:var(--town);flex:0 0 auto;animation:dotpulse 1.3s ease-in-out infinite}
@@ -988,8 +989,16 @@ html,body,.app,.card,.status-row,.row,.phasehead,.calloutcard,.nav,
 
 <!-- OUTCOME -->
 <div id="pg-outcome" class="phase-group" style="display:none">
-<h2 class="title" id="outcomeTitle" style="color:var(--red-hi)">NATIJA</h2>
-<p class="subtitle" id="outcomeIntro">Shahar kimnidir yo'qotdi...</p>
+<div class="card phasehead vote">
+  <div class="phasehead-label">
+    <div class="phasehead-icon"><svg class="icon"><use href="#i-crown"/></svg></div>
+    <div>
+      <div class="phasehead-title" id="outcomePhaseTitle">NATIJA</div>
+      <div class="phasehead-sub" id="outcomePhaseSub">Shahar kimnidir yo'qotdi...</div>
+    </div>
+  </div>
+  <div class="phasehead-timer" id="outcomeTimer">00:00</div>
+</div>
 <div class="hero-art" id="outcomeHero" style="margin-top:14px"></div>
 <div id="outcomeExtra"></div>
 <div class="bottomactions"><div class="stack"><button class="btn gold" id="outcomeContinueBtn" onclick="dismissOutcome()" data-i18n="outcome_continue_btn">Davom etish</button></div></div>
