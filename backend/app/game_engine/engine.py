@@ -29,15 +29,17 @@ from app.game_engine.managers import (
 CHAT_MAX_LEN = 500
 CHAT_HISTORY_LIMIT = 200
 
-ADMIN_SETTINGS_BOUNDS: dict[str, tuple[int, int]] = {
-    "night_duration_s": (10, 300),
-    "day_duration_s": (30, 600),
-    "voting_duration_s": (15, 300),
-    "role_assignment_duration_s": (5, 120),
-    "morning_duration_s": (3, 60),
-    "lynch_confirmation_duration_s": (5, 120),
-    "kamikaze_strike_duration_s": (5, 120),
-    "vote_results_duration_s": (5, 120),
+# Yuqori chegaralar olib tashlangan: administrator istalgan qiymatni qo'ya oladi.
+# Faqat minimum 1 soniya saqlanadi (0 yoki manfiy vaqt soatni buzib qo'yadi).
+ADMIN_SETTINGS_BOUNDS: dict[str, tuple[int, Optional[int]]] = {
+    "night_duration_s": (1, None),
+    "day_duration_s": (1, None),
+    "voting_duration_s": (1, None),
+    "role_assignment_duration_s": (1, None),
+    "morning_duration_s": (1, None),
+    "lynch_confirmation_duration_s": (1, None),
+    "kamikaze_strike_duration_s": (1, None),
+    "vote_results_duration_s": (1, None),
 }
 ADMIN_SETTINGS_CHOICES: dict[str, set[str]] = {
     "tie_rule": {"no_elimination", "revote", "random"},
@@ -539,8 +541,10 @@ class GameEngine:
                     value = int(value)
                 except (TypeError, ValueError):
                     raise EngineError(f"Invalid value for {key}")
-                if not (lo <= value <= hi):
-                    raise EngineError(f"{key} must be between {lo} and {hi} seconds")
+                if value < lo:
+                    raise EngineError(f"{key} must be at least {lo} second")
+                if hi is not None and value > hi:
+                    raise EngineError(f"{key} must be no more than {hi} seconds")
                 setattr(self.state.settings, key, value)
             elif key in ADMIN_SETTINGS_CHOICES:
                 if value not in ADMIN_SETTINGS_CHOICES[key]:
@@ -607,8 +611,10 @@ class GameEngine:
             raise EngineError("Vaqt soniyalarda kiritilishi kerak")
         field = PHASE_SETTING_FIELD[phase]
         lo, hi = ADMIN_SETTINGS_BOUNDS[field]
-        if not (lo <= seconds <= hi):
-            raise EngineError(f"{phase} — vaqt {lo} va {hi} soniya orasida bo'lishi kerak")
+        if seconds < lo:
+            raise EngineError(f"{phase} — vaqt kamida {lo} soniya bo'lishi kerak")
+        if hi is not None and seconds > hi:
+            raise EngineError(f"{phase} — vaqt ko'pi bilan {hi} soniya bo'lishi kerak")
         if int(getattr(self.state.settings, field)) != seconds:
             setattr(self.state.settings, field, seconds)
         if self.state.phase.value == phase and self.state.phase != Phase.GAME_OVER:

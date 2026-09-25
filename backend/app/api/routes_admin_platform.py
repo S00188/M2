@@ -774,8 +774,10 @@ async def admin_update_game_settings(
                 value = int(value)
             except (TypeError, ValueError):
                 raise HTTPException(400, f"{key}: butun son kiriting")
-            if not (lo <= value <= hi):
-                raise HTTPException(400, f"{key}: {lo} va {hi} soniya orasida bo'lishi kerak")
+            if value < lo:
+                raise HTTPException(400, f"{key}: kamida {lo} soniya bo'lishi kerak")
+            if hi is not None and value > hi:
+                raise HTTPException(400, f"{key}: ko'pi bilan {hi} soniya bo'lishi kerak")
             cleaned[key] = value
         elif key in ADMIN_SETTINGS_CHOICES:
             if value not in ADMIN_SETTINGS_CHOICES[key]:

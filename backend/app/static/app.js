@@ -3209,8 +3209,8 @@ function renderAdminGameDetail(g) {
           ${timedPhases.map((p) => `<option value="${p}" ${p === g.phase ? "selected" : ""}>${PHASE_LABEL_UZ[p] || p}</option>`).join("")}
         </select>
       </div>
-      <div class="ap-field"><label>Davomiylik, soniya (3–600)</label>
-        <input class="ap-input" type="number" id="adminPhaseSeconds" min="3" max="600" value="${curSec}">
+      <div class="ap-field"><label>Davomiylik, soniya</label>
+        <input class="ap-input" type="number" id="adminPhaseSeconds" min="1" value="${curSec}">
       </div>
       <div class="ap-btnrow" style="margin-top:12px">
         <button class="ap-btn gold" onclick="adminSetPhaseTimer('${g.game_id}')">Qo'llash</button>
@@ -3464,11 +3464,11 @@ function gameSettingsCardHTML() {
       <div class="ap-h"><span>O'yin vaqtlari</span><span class="ap-tag done">Global</span></div>
       <div class="ap-quicknote">Har bir yangi o'yin shu vaqtlar bilan boshlanadi. Jonli o'yin bosqichining vaqtini xohlagan payt "O'yin nazorati" bo'limida ham o'zgartirish mumkin.</div>
       <div class="ap-field" style="margin-top:12px"><label>Bosqich davomiyliklari, soniya</label></div>
-      ${durationFields.map((f) => `
+      ${durationFields.map((f) => { const bd = bounds[f]; const rng = bd ? (bd[1] != null ? bd[0] + "\u2013" + bd[1] : bd[0] + "+") + " s" : ""; return `
         <div class="ap-field">
-          <label>${GAME_DURATION_LABELS[f]} <span style="color:var(--muted2);font-weight:500">(${bounds[f] ? bounds[f][0] + "\u2013" + bounds[f][1] : ""} s)</span></label>
-          <input class="ap-input" type="number" id="gs_${f}" value="${s[f] ?? ""}" ${bounds[f] ? `min="${bounds[f][0]}" max="${bounds[f][1]}"` : ""}>
-        </div>`).join("")}
+          <label>${GAME_DURATION_LABELS[f]} ${rng ? `<span style="color:var(--muted2);font-weight:500">(${rng})</span>` : ""}</label>
+          <input class="ap-input" type="number" id="gs_${f}" value="${s[f] ?? ""}" ${bd ? `min="${bd[0]}"` : ""} ${bd && bd[1] != null ? `max="${bd[1]}"` : ""}>
+        </div>`; }).join("")}
       <div class="ap-field">
         <label>Teng ovoz holati</label>
         <select class="ap-input" id="gs_tie_rule">
