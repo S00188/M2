@@ -38,6 +38,13 @@ class GameSettings:
     night_duration_s: int = 45
     voting_duration_s: int = 60
     lobby_duration_s: int = 300
+    # Short "cinematic" phases, previously hard-coded in managers.py —
+    # now per-game so the admin can tune them (card-viewing time included).
+    role_assignment_duration_s: int = 15  # karta ko'rish / rol taqsimoti
+    morning_duration_s: int = 8
+    lynch_confirmation_duration_s: int = 15
+    kamikaze_strike_duration_s: int = 15
+    vote_results_duration_s: int = 60     # so'nggi so'z oynasi
     anonymous_voting: bool = False
     reveal_role_on_death: bool = True
     allow_self_vote: bool = False

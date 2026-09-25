@@ -15,10 +15,14 @@ app/services/admin_service.py (a super admin passes any; a panel admin only
 passes the checks their AdminUser/AdminPermission rows give them). The
 WebApp's is_bot_admin/permissions flags are display-only conveniences.
 
-Deliberately NOT here (removed in the re-platform per the spec): a game-
-settings module, timezone/maintenance/logs/security modules, premium, and
-force-sub — the existing owner-level game-control REST routes in
-routes_admin.py are untouched, but the panel itself is exactly these seven.
+Deliberately NOT here (removed in the re-platform per the spec): timezone/
+maintenance/logs/security modules, premium, and force-sub — the existing
+owner-level game-control REST routes in routes_admin.py are untouched.
+The global game-timing editor ("O'yin sozlamalari", GET/PUT
+/admin/game-settings below) is back per the owner's request: phase
+durations (card-viewing time included) + voting toggles, rendered in the
+"Sozlamalar" module. Per-match mid-game timer overrides stay in
+routes_admin.py (/admin/games/{game_id}/phase-timer).
 """
 from __future__ import annotations
 
@@ -32,7 +36,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.config import settings
 from app.services import admin_service, bot_config
-from app.services.game_service import registry, BOT_GAME_CHAT_PREFIX
+from app.services.game_service import (
+    registry, BOT_GAME_CHAT_PREFIX, effective_global_settings, save_global_settings,
+)
+from app.game_engine.engine import (
+    ADMIN_SETTINGS_BOUNDS, ADMIN_SETTINGS_CHOICES, ADMIN_SETTINGS_BOOLS,
+    PHASE_SETTING_FIELD,
+)
 from app.services.telegram_bot_api import send_telegram_message, send_telegram_media
 from app.models.models import (
     AdminPermission, AdminUser, BlockedUser, BotButton, BotText, Broadcast,
@@ -710,3 +720,71 @@ async def admin_reorder_buttons(
 ):
     await bot_config.reorder_buttons(session, body.keys)
     return {"ok": True, "order": list(body.keys)}
+
+
+# --------------------------------------------------------------------- game settings
+# The "O'yin sozlamalari" surface: the owner's *global* game-phase timings
+# every new match is created from (single source of truth:
+# app/services/game_service.py load/save_global_settings). Restored to the
+# panel per the owner's request — phase durations (card-viewing time
+# included) plus the voting toggles live here again, rendered in the
+# "Sozlamalar" module. Per-match, mid-game overrides go through
+# POST /admin/games/{game_id}/phase-timer (routes_admin.py).
+TIE_RULE_LABELS = {
+    "no_elimination": "Hech kim chiqmaydi",
+    "revote": "Qayta ovoz",
+    "random": "Tasodifiy",
+}
+
+
+@router.get("/game-settings")
+async def admin_get_game_settings(
+    _: int = Depends(admin_service.require_admin_permission("settings.view")),
+):
+    """Every adjustable global game setting with its validation bounds, so
+    the "Sozlamalar" module can render the phase-timing editor."""
+    return {
+        "settings": effective_global_settings(),
+        "bounds": {k: list(v) for k, v in ADMIN_SETTINGS_BOUNDS.items()},
+        "choices": {k: sorted(v) for k, v in ADMIN_SETTINGS_CHOICES.items()},
+        "booleans": sorted(ADMIN_SETTINGS_BOOLS),
+        "tie_rule_labels": TIE_RULE_LABELS,
+        "phase_setting_fields": dict(PHASE_SETTING_FIELD),
+    }
+
+
+class GameSettingsUpdate(BaseModel):
+    settings: dict = {}
+
+
+@router.put("/game-settings")
+async def admin_update_game_settings(
+    body: GameSettingsUpdate,
+    _: int = Depends(admin_service.require_admin_permission("settings.manage")),
+    session: AsyncSession = Depends(get_session),
+):
+    updates = body.settings or {}
+    if not isinstance(updates, dict):
+        raise HTTPException(400, "Sozlamalar obyekt bo'lishi kerak")
+    cleaned: dict = {}
+    for key, value in updates.items():
+        if key in ADMIN_SETTINGS_BOUNDS:
+            lo, hi = ADMIN_SETTINGS_BOUNDS[key]
+            try:
+                value = int(value)
+            except (TypeError, ValueError):
+                raise HTTPException(400, f"{key}: butun son kiriting")
+            if not (lo <= value <= hi):
+                raise HTTPException(400, f"{key}: {lo} va {hi} soniya orasida bo'lishi kerak")
+            cleaned[key] = value
+        elif key in ADMIN_SETTINGS_CHOICES:
+            if value not in ADMIN_SETTINGS_CHOICES[key]:
+                raise HTTPException(400, f"{key}: noto'g'ri qiymat")
+            cleaned[key] = value
+        elif key in ADMIN_SETTINGS_BOOLS:
+            cleaned[key] = bool(value)
+        else:
+            raise HTTPException(400, f"{key}: noma'lum sozlama")
+    await save_global_settings(session, cleaned)
+    return {"ok": True, "settings": effective_global_settings(),
+            "saved": {k: v for k, v in cleaned.items()}}

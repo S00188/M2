@@ -2722,6 +2722,37 @@ let adminGroupSearch = "";
 let adminGroupsOnlyActive = false;
 let adminStats = null;
 let adminButtons = null;
+let adminGameSettings = null;
+
+// The global game-timing editor ("O'yin vaqtlari") mirrors the backend's
+// ADMIN_SETTINGS_BOUNDS/PHASE_SETTING_FIELD so the form knows each field's
+// range and which live-game phase reads which setting.
+const GAME_DURATION_LABELS = {
+  night_duration_s: "Tun davomiyligi",
+  day_duration_s: "Kunduz — muhokama",
+  voting_duration_s: "Ovoz berish",
+  role_assignment_duration_s: "Karta ko'rish / rol taqsimoti",
+  morning_duration_s: "Tun natijasi (ertalab)",
+  lynch_confirmation_duration_s: "Osib o'ldirish tasdig'i",
+  kamikaze_strike_duration_s: "Kamikadze zarbasi",
+  vote_results_duration_s: "Natija / so'nggi so'z",
+};
+const GAME_OPTION_LABELS = {
+  tie_rule: { no_elimination: "Hech kim chiqmaydi", revote: "Qayta ovoz", random: "Tasodifiy" },
+  anonymous_voting: "Anonim ovoz berish",
+  allow_self_vote: "O'ziga ovoz berish",
+  reveal_role_on_death: "O'limda rolni ko'rsatish",
+};
+const PHASE_SETTING_FIELD = {
+  role_assignment: "role_assignment_duration_s",
+  night: "night_duration_s",
+  morning: "morning_duration_s",
+  day_discussion: "day_duration_s",
+  voting: "voting_duration_s",
+  lynch_confirmation: "lynch_confirmation_duration_s",
+  kamikaze_strike: "kamikaze_strike_duration_s",
+  vote_results: "vote_results_duration_s",
+};
 
 // ---- control-mode state
 let adminGamesList = [];
@@ -2865,7 +2896,7 @@ async function adminRefresh() {
   else if (tab === "texts") await refreshTexts();
   else if (tab === "groups") await refreshGroups();
   else if (tab === "stats") await refreshStats();
-  else if (tab === "settings") { await refreshButtons(); await loadPermCatalog(); }
+  else if (tab === "settings") { await refreshButtons(); await loadPermCatalog(); await refreshGameSettings(); }
   renderAdminScreen();
 }
 
@@ -3151,6 +3182,9 @@ function renderAdminGamesList() {
 
 function renderAdminGameDetail(g) {
   const inLobby = g.phase === "lobby";
+  const timedPhases = (g.timed_phases && g.timed_phases.length) ? g.timed_phases : Object.keys(PHASE_SETTING_FIELD);
+  const curPhaseField = PHASE_SETTING_FIELD[g.phase];
+  const curSec = (g.settings && curPhaseField && g.settings[curPhaseField] != null) ? g.settings[curPhaseField] : 60;
   document.getElementById("apControlGames").innerHTML = `
     <div class="ap-card">
       <button class="ap-btn dark" style="margin:0 0 14px" onclick="adminBackToGamesList()">← Barcha o'yinlar</button>
@@ -3165,6 +3199,22 @@ function renderAdminGameDetail(g) {
         <button class="ap-btn dark" ${inLobby ? "disabled" : ""} onclick="adminExtendTimer('${g.game_id}')">+30 soniya</button>
       </div>
       <button class="ap-btn danger" onclick="adminTerminateGame('${g.game_id}')">O'yinni tugatish</button>
+    </div>
+
+    <div class="ap-card">
+      <div class="ap-h"><span>Joriy bosqich vaqti</span></div>
+      <div class="ap-hint" style="margin-top:10px">Karta ko'rish (rol taqsimoti) vaqtini o'yin boshlanganidan keyin ham o'zgartirish mumkin. Tanlangan bosqich hozir davom etayotgan bo'lsa, hisob darhol yangi qiymatdan boshlanadi.</div>
+      <div class="ap-field" style="margin-top:12px"><label>Bosqich</label>
+        <select class="ap-input" id="adminPhaseName" onchange="adminPhaseSelectChanged('${g.game_id}')">
+          ${timedPhases.map((p) => `<option value="${p}" ${p === g.phase ? "selected" : ""}>${PHASE_LABEL_UZ[p] || p}</option>`).join("")}
+        </select>
+      </div>
+      <div class="ap-field"><label>Davomiylik, soniya (3–600)</label>
+        <input class="ap-input" type="number" id="adminPhaseSeconds" min="3" max="600" value="${curSec}">
+      </div>
+      <div class="ap-btnrow" style="margin-top:12px">
+        <button class="ap-btn gold" onclick="adminSetPhaseTimer('${g.game_id}')">Qo'llash</button>
+      </div>
     </div>
 
     <div class="ap-card">
@@ -3382,10 +3432,10 @@ function renderStats() {
 }
 
 // ---------------------------------------------------- settings module -----
-// Bot sozlamalari: bot menu buttons (labels/enabled/order) + the permission
-// catalog reference. Permission: settings.view + settings.manage. Note this
-// is NOT a game-settings editor — global match settings were deliberately
-// dropped from the panel (spec section 13), only bot texts/buttons render.
+// Bot sozlamalari: the "O'yin vaqtlari" global game-timing editor
+// (GET/PUT /admin/game-settings — returned to the panel per the owner) plus
+// bot menu buttons (labels/enabled/order) and the permission catalog.
+// Permission: settings.view + settings.manage.
 
 async function loadPermCatalog() {
   adminPermCatalog = await api("/admin/permissions").then((r) => r).catch(() => ({ catalog: {} }));
@@ -3393,6 +3443,72 @@ async function loadPermCatalog() {
 
 async function refreshButtons() {
   adminButtons = await api("/admin/settings/buttons").then((r) => r.buttons || []).catch(() => []);
+}
+
+async function refreshGameSettings() {
+  adminGameSettings = await api("/admin/game-settings").catch(() => null);
+}
+
+// "O'yin vaqtlari": the global game-timing editor (GET/PUT /admin/game-settings).
+// Every phase duration, the tie_rule, and the voting toggles.
+function gameSettingsCardHTML() {
+  const gs = adminGameSettings;
+  if (!gs) return `<div class="ap-card"><div class="waitnote"><span class="dotpulse"></span>Yuklanmoqda...</div></div>`;
+  const s = gs.settings || {};
+  const bounds = gs.bounds || {};
+  const durationFields = Object.keys(GAME_DURATION_LABELS);
+  const tieChoices = (gs.choices && gs.choices.tie_rule) || ["no_elimination", "revote", "random"];
+  const tieLabels = (gs.tie_rule_labels && Object.assign(GAME_OPTION_LABELS.tie_rule, gs.tie_rule_labels)) || GAME_OPTION_LABELS.tie_rule;
+  return `
+    <div class="ap-card">
+      <div class="ap-h"><span>O'yin vaqtlari</span><span class="ap-tag done">Global</span></div>
+      <div class="ap-quicknote">Har bir yangi o'yin shu vaqtlar bilan boshlanadi. Jonli o'yin bosqichining vaqtini xohlagan payt "O'yin nazorati" bo'limida ham o'zgartirish mumkin.</div>
+      <div class="ap-field" style="margin-top:12px"><label>Bosqich davomiyliklari, soniya</label></div>
+      ${durationFields.map((f) => `
+        <div class="ap-field">
+          <label>${GAME_DURATION_LABELS[f]} <span style="color:var(--muted2);font-weight:500">(${bounds[f] ? bounds[f][0] + "\u2013" + bounds[f][1] : ""} s)</span></label>
+          <input class="ap-input" type="number" id="gs_${f}" value="${s[f] ?? ""}" ${bounds[f] ? `min="${bounds[f][0]}" max="${bounds[f][1]}"` : ""}>
+        </div>`).join("")}
+      <div class="ap-field">
+        <label>Teng ovoz holati</label>
+        <select class="ap-input" id="gs_tie_rule">
+          ${tieChoices.map((c) => `<option value="${c}" ${s.tie_rule === c ? "selected" : ""}>${tieLabels[c] || c}</option>`).join("")}
+        </select>
+      </div>
+      ${(gs.booleans || []).map((b) => `
+        <label class="ap-toggle" style="margin-top:10px">
+          <span class="grow"><span class="tname">${GAME_OPTION_LABELS[b] || b}</span></span>
+          <span class="ap-switch"><input type="checkbox" id="gs_${b}" ${s[b] ? "checked" : ""}><i></i></span>
+        </label>`).join("")}
+      ${hasPermission("settings.manage")
+        ? `<div class="ap-btnrow" style="margin-top:14px"><button class="ap-btn gold" onclick="adminSaveGameSettings()">Saqlash</button></div>`
+        : `<div class="ap-quicknote" style="margin-top:12px">O'yin vaqtlarini tahrirlash uchun ruxsat yo'q.</div>`}
+    </div>`;
+}
+
+function adminSaveGameSettings() {
+  const gs = adminGameSettings;
+  if (!gs) return;
+  const settings = {};
+  const bounds = gs.bounds || {};
+  for (const f of Object.keys(GAME_DURATION_LABELS)) {
+    const el = document.getElementById("gs_" + f);
+    if (el) settings[f] = parseInt(el.value, 10);
+  }
+  const tie = document.getElementById("gs_tie_rule");
+  if (tie) settings.tie_rule = tie.value;
+  (gs.booleans || []).forEach((b) => {
+    const el = document.getElementById("gs_" + b);
+    if (el) settings[b] = !!el.checked;
+  });
+  (async () => {
+    try {
+      await api("/admin/game-settings", { method: "PUT", body: JSON.stringify({ settings }) });
+      toast("O'yin vaqtlari saqlandi");
+      await refreshGameSettings();
+      renderSettings();
+    } catch (e) { toast(e.message); }
+  })();
 }
 
 function renderSettings() {
@@ -3404,9 +3520,10 @@ function renderSettings() {
   }
   const order = adminButtons.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
   el.innerHTML = `
+    ${gameSettingsCardHTML()}
     <div class="ap-card">
       <div class="ap-h"><span>Bot menyu tugmalari</span><span>${order.length}</span></div>
-      <div class="ap-quicknote">Botning asosiy menyusidagi tugmalar. "Admin panel" kabi tugmalar faqat adminlarga ko'rinadi. Qoidalardagi global o'yin sozlamalari panelga kiritilmagan (spec §13).</div>
+      <div class="ap-quicknote">Botning asosiy menyusidagi tugmalar. "Admin panel" kabi tugmalar faqat adminlarga ko'rinadi. O'yin vaqtlari yuqoridagi kartada sozlanadi (har bir yangi o'yin ular bilan boshlanadi).</div>
       ${order.map((b) => `
         <div class="ap-card" style="margin-top:12px">
           <div class="ap-h">
@@ -3599,6 +3716,30 @@ async function adminExtendTimer(gameId) {
   try {
     await api(`/admin/games/${gameId}/extend-timer`, { method: "POST", body: JSON.stringify({ seconds: 30 }) });
     toast("+30 soniya qo'shildi");
+    await adminOpenGame(gameId);
+  } catch (e) { toast(e.message); }
+}
+
+function adminPhaseSelectChanged(gameId) {
+  const g = adminSelectedGameDetail; if (!g) return;
+  const sel = document.getElementById("adminPhaseName"); if (!sel) return;
+  const secs = document.getElementById("adminPhaseSeconds"); if (!secs) return;
+  const field = PHASE_SETTING_FIELD[sel.value];
+  const v = g.settings && field && g.settings[field];
+  if (v != null) secs.value = v;
+}
+
+async function adminSetPhaseTimer(gameId) {
+  const sel = document.getElementById("adminPhaseName");
+  const secs = document.getElementById("adminPhaseSeconds");
+  const phase = sel ? sel.value : null;
+  const seconds = parseInt(secs ? secs.value : "", 10);
+  if (!phase || isNaN(seconds)) { toast("Davomiylikni to'g'ri kiriting"); return; }
+  try {
+    await api(`/admin/games/${gameId}/phase-timer`, {
+      method: "POST", body: JSON.stringify({ phase, seconds }),
+    });
+    toast((PHASE_LABEL_UZ[phase] || phase) + " vaqti yangilandi");
     await adminOpenGame(gameId);
   } catch (e) { toast(e.message); }
 }

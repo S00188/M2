@@ -237,7 +237,10 @@ class RoleManager:
         return None
 
 
-# Fixed duration for ROLE_ASSIGNMENT (spec item 5).
+# Default durations for the short "cinematic" phases — the per-game values
+# live on GameSettings (see state.py); these constants are the documented
+# defaults the dataclass mirrors and the fallback for any call that doesn't
+# have a settings object handy.
 ROLE_ASSIGNMENT_DURATION_S = 15
 # A short cinematic window for the morning report before the day's discussion.
 MORNING_DURATION_S = 8
@@ -251,7 +254,7 @@ class PhaseManager:
     @staticmethod
     def to_role_assignment(state: GameState) -> None:
         state.phase = Phase.ROLE_ASSIGNMENT
-        TimerManager.start_phase(state, ROLE_ASSIGNMENT_DURATION_S)
+        TimerManager.start_phase(state, state.settings.role_assignment_duration_s)
         EventManager.log(state, "phase_role_assignment")
 
     @staticmethod
@@ -277,7 +280,7 @@ class PhaseManager:
         frontend shows "nobody died" or "Player X was found dead" here before
         discussion opens."""
         state.phase = Phase.MORNING
-        TimerManager.start_phase(state, MORNING_DURATION_S)
+        TimerManager.start_phase(state, state.settings.morning_duration_s)
         EventManager.log(state, "phase_morning", night=state.night_number)
         ActivityFeedManager.public(state, "morning.begins", night=state.night_number)
 
@@ -312,7 +315,7 @@ class PhaseManager:
         state._confirm_yes = 0
         state._confirm_no = 0
         state._confirm_voters.clear()  # a fresh ballot each time: never carry votes over
-        TimerManager.start_phase(state, LYNCH_CONFIRMATION_DURATION_S)
+        TimerManager.start_phase(state, state.settings.lynch_confirmation_duration_s)
         EventManager.log(state, "phase_lynch_confirmation", candidates=state.revote_candidates)
         ActivityFeedManager.public(state, "lynch.confirmation_begins", day=state.day_number)
 
@@ -321,7 +324,7 @@ class PhaseManager:
         """The Kamikaze has been lynched; they now get one short window to
         choose a living player to take with them."""
         state.phase = Phase.KAMIKAZE_STRIKE
-        TimerManager.start_phase(state, KAMIKAZE_STRIKE_DURATION_S)
+        TimerManager.start_phase(state, state.settings.kamikaze_strike_duration_s)
         EventManager.log(state, "phase_kamikaze_strike")
         ActivityFeedManager.public(state, "kamikaze.strike_begins", day=state.day_number)
 
@@ -329,7 +332,7 @@ class PhaseManager:
     def to_vote_results(state: GameState) -> None:
         state.phase = Phase.VOTE_RESULTS
         # gives the just-eliminated player a window to type last words
-        TimerManager.start_phase(state, 60)
+        TimerManager.start_phase(state, state.settings.vote_results_duration_s)
         ActivityFeedManager.public(state, "voting.resolved", day=state.day_number)
 
     @staticmethod

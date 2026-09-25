@@ -33,11 +33,29 @@ ADMIN_SETTINGS_BOUNDS: dict[str, tuple[int, int]] = {
     "night_duration_s": (10, 300),
     "day_duration_s": (30, 600),
     "voting_duration_s": (15, 300),
+    "role_assignment_duration_s": (5, 120),
+    "morning_duration_s": (3, 60),
+    "lynch_confirmation_duration_s": (5, 120),
+    "kamikaze_strike_duration_s": (5, 120),
+    "vote_results_duration_s": (5, 120),
 }
 ADMIN_SETTINGS_CHOICES: dict[str, set[str]] = {
     "tie_rule": {"no_elimination", "revote", "random"},
 }
 ADMIN_SETTINGS_BOOLS: set[str] = {"anonymous_voting", "allow_self_vote", "reveal_role_on_death"}
+
+# Phase value -> GameSettings field it reads its timer from. Used by
+# admin_set_phase_timer() so a mid-game override lands on the right setting.
+PHASE_SETTING_FIELD: dict[str, str] = {
+    "role_assignment": "role_assignment_duration_s",
+    "night": "night_duration_s",
+    "morning": "morning_duration_s",
+    "day_discussion": "day_duration_s",
+    "voting": "voting_duration_s",
+    "lynch_confirmation": "lynch_confirmation_duration_s",
+    "kamikaze_strike": "kamikaze_strike_duration_s",
+    "vote_results": "vote_results_duration_s",
+}
 
 
 class GameEngine:
@@ -570,6 +588,33 @@ class GameEngine:
         self.state.phase_end += seconds
         EventManager.log(self.state, "phase_extended", seconds=seconds)
 
+    def admin_set_phase_timer(self, host_id: Optional[str], phase: str, seconds: int) -> None:
+        """Admin override for a phase's timer — allowed even *while* the
+        game is running (that's the whole point: e.g. give players more time
+        to view their card in the middle of ROLE_ASSIGNMENT, or shorten a
+        drag of a discussion).
+
+        `seconds` is applied immediately to the current phase when it
+        matches (the countdown restarts fresh from `seconds`); the same
+        value is also stored on settings so every later entry into that
+        phase uses it. Non-team phases (lobby / game_over) have no timer."""
+        self._require_host_or_system(host_id)
+        if phase not in PHASE_SETTING_FIELD:
+            raise EngineError("Bu bosqichda vaqtni sozlab bo'lmaydi")
+        try:
+            seconds = int(seconds)
+        except (TypeError, ValueError):
+            raise EngineError("Vaqt soniyalarda kiritilishi kerak")
+        field = PHASE_SETTING_FIELD[phase]
+        lo, hi = ADMIN_SETTINGS_BOUNDS[field]
+        if not (lo <= seconds <= hi):
+            raise EngineError(f"{phase} — vaqt {lo} va {hi} soniya orasida bo'lishi kerak")
+        if int(getattr(self.state.settings, field)) != seconds:
+            setattr(self.state.settings, field, seconds)
+        if self.state.phase.value == phase and self.state.phase != Phase.GAME_OVER:
+            TimerManager.start_phase(self.state, seconds)
+        EventManager.log(self.state, "phase_timer_set", phase=phase, seconds=seconds)
+
     def admin_remove_player(self, host_id: Optional[str], target_id: str) -> None:
         self._require_host_or_system(host_id)
         if host_id is not None and target_id == host_id:
@@ -798,6 +843,11 @@ class GameEngine:
                     "night_duration_s": s.settings.night_duration_s,
                     "day_duration_s": s.settings.day_duration_s,
                     "voting_duration_s": s.settings.voting_duration_s,
+                    "role_assignment_duration_s": s.settings.role_assignment_duration_s,
+                    "morning_duration_s": s.settings.morning_duration_s,
+                    "lynch_confirmation_duration_s": s.settings.lynch_confirmation_duration_s,
+                    "kamikaze_strike_duration_s": s.settings.kamikaze_strike_duration_s,
+                    "vote_results_duration_s": s.settings.vote_results_duration_s,
                     "tie_rule": s.settings.tie_rule,
                     "anonymous_voting": s.settings.anonymous_voting,
                     "allow_self_vote": s.settings.allow_self_vote,

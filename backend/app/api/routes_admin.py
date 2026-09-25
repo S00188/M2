@@ -42,13 +42,15 @@ class ExtendTimerRequest(BaseModel):
     seconds: int = 30
 
 
-# NOTE: this router used to expose a /global-settings editor (night/day/
-# voting duration, tie_rule, role-composition toggles) here. That's the
-# "O'yin sozlamalari" surface the unified admin spec explicitly forbids
-# re-adding to the admin panel, and the frontend never called it — removed
-# outright rather than migrated. Game timing still has a single source of
-# truth (app.services.game_service.load_global_settings, read at startup);
-# there just isn't an HTTP editor for it anymore.
+class PhaseTimerRequest(BaseModel):
+    phase: str
+    seconds: int
+
+
+# The /global-settings editor (night/day/voting duration, tie_rule,
+# role-composition toggles) now lives in routes_admin_platform.py as the
+# panel's "O'yin sozlamalari" surface (GET/PUT /admin/game-settings) — see
+# that file. This router keeps the per-match, mid-game control below.
 
 
 class BotGameRequest(BaseModel):
@@ -146,11 +148,18 @@ async def get_game_admin_detail(game_id: str, _: int = Depends(require_bot_admin
             "night_duration_s": s.settings.night_duration_s,
             "day_duration_s": s.settings.day_duration_s,
             "voting_duration_s": s.settings.voting_duration_s,
+            "role_assignment_duration_s": s.settings.role_assignment_duration_s,
+            "morning_duration_s": s.settings.morning_duration_s,
+            "lynch_confirmation_duration_s": s.settings.lynch_confirmation_duration_s,
+            "kamikaze_strike_duration_s": s.settings.kamikaze_strike_duration_s,
+            "vote_results_duration_s": s.settings.vote_results_duration_s,
             "tie_rule": s.settings.tie_rule,
             "anonymous_voting": s.settings.anonymous_voting,
             "allow_self_vote": s.settings.allow_self_vote,
             "reveal_role_on_death": s.settings.reveal_role_on_death,
         },
+        "timed_phases": ["role_assignment", "night", "morning", "day_discussion",
+                         "voting", "lynch_confirmation", "kamikaze_strike", "vote_results"],
         "players": [
             {
                 "player_id": p.player_id, "display_name": p.display_name,
@@ -190,6 +199,23 @@ async def admin_extend_timer(game_id: str, body: ExtendTimerRequest, _: int = De
     engine = _get_engine_or_404(game_id)
     try:
         engine.extend_current_phase(None, body.seconds)
+    except EngineError as e:
+        raise HTTPException(400, str(e))
+    await manager.broadcast_state(game_id, engine)
+    return {"ok": True}
+
+
+@router.post("/games/{game_id}/phase-timer")
+async def admin_set_phase_timer(game_id: str, body: PhaseTimerRequest,
+                                _: int = Depends(require_bot_admin)):
+    """Set one phase's timer for a live match — the mid-game override that
+    lets the web admin panel change the card-viewing (role assignment) time
+    after the game has already started, or speed up / slow down any other
+    timed phase. Applies immediately to the current phase when it matches
+    and is persisted on the game's settings for later entries."""
+    engine = _get_engine_or_404(game_id)
+    try:
+        engine.admin_set_phase_timer(None, body.phase, body.seconds)
     except EngineError as e:
         raise HTTPException(400, str(e))
     await manager.broadcast_state(game_id, engine)

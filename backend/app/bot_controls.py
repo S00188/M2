@@ -179,20 +179,35 @@ def register_controls(dp):
                 async with AsyncSessionLocal() as session:
                     rows = (await session.execute(select(SupportMessage).where(
                         SupportMessage.replied.is_(False)
-                    ).order_by(SupportMessage.id.desc()).limit(20))).scalars().all()
+                    ).order_by(SupportMessage.id.desc()).limit(30))).scalars().all()
                 if not rows:
                     await tb()._edit_or_send(uid, "Yangi murojaatlar yo‘q.", reply_markup=panel_back())
-                else:
-                    seen = set()
-                    for row in rows:
-                        key = (row.user_telegram_id, row.original_text)
-                        if key in seen:
-                            continue
-                        seen.add(key)
-                        await tb().get_bot().send_message(uid,
-                            f"✉️ {escape(row.user_display_name)} · <code>{row.user_telegram_id}</code>\n\n{escape(row.original_text[:3000])}",
-                            reply_markup=support_keyboard(row.id, row.user_telegram_id))
-                    await tb()._edit_or_send(uid, "Oxirgi javobsiz murojaatlar.", reply_markup=panel_back())
+                    return
+                # Single inline panel instead of one new chat message per row —
+                # everything stays inside the panel message, edited in place.
+                seen = set()
+                collected = []
+                for row in rows:
+                    key = (row.user_telegram_id, row.original_text)
+                    if key in seen or len(collected) >= 7:
+                        continue
+                    seen.add(key)
+                    collected.append(row)
+                text_lines = [
+                    f"✉️ {escape(row.user_display_name)} · ID {row.user_telegram_id}\n{escape((row.original_text or '')[:160])}"
+                    for row in collected
+                ]
+                header = f"📥 Javobsiz murojaatlar — {len(collected)} ta"
+                kb_rows = [[
+                    Button(text=f"↩️ Javob #{row.id}", callback_data=f"ctl:reply:{row.id}"),
+                    Button(text=f"🚫 Blok {row.user_telegram_id}", callback_data=f"ctl:ban:{row.user_telegram_id}"),
+                ] for row in collected]
+                kb_rows.append([Button(text="⬅️ Admin panel", callback_data="ctl:home")])
+                await tb()._edit_or_send(
+                    uid,
+                    (header + "\n\n" + "\n\n".join(text_lines))[:4000],
+                    reply_markup=Keyboard(inline_keyboard=kb_rows),
+                )
             elif action in ("reply", "block", "unblock", "channel_add", "ad"):
                 permission = {"reply": "support.reply", "block": "users.manage", "unblock": "users.manage",
                               "channel_add": "settings.manage", "ad": "broadcast.send"}[action]
@@ -246,11 +261,13 @@ def register_controls(dp):
                 text = "\n".join(f"#{b.id} {labels.get(b.status, b.status)} · ✅ {b.delivered} / ❌ {b.failed} / Jami {b.total}" for b in rows)
                 await tb()._edit_or_send(uid, text or "Hali reklama yo‘q.", reply_markup=panel_back())
         except HTTPException as exc:
-            await tb().get_bot().send_message(uid, escape(str(exc.detail)))
+            await tb()._edit_or_send(uid, escape(str(exc.detail)), reply_markup=panel_back())
         except (ValueError, IndexError):
-            await tb().get_bot().send_message(uid, "Ma’lumot noto‘g‘ri yoki amal allaqachon bajarilgan. Panelni qayta oching.")
+            await tb()._edit_or_send(uid, "Ma’lumot noto‘g‘ri yoki amal allaqachon bajarilgan. Panelni qayta oching.",
+                                     reply_markup=panel_back())
         except TelegramAPIError:
-            await tb().get_bot().send_message(uid, "Telegram bilan bog‘lanib bo‘lmadi. Bot huquqlarini tekshiring va qayta urinib ko‘ring.")
+            await tb()._edit_or_send(uid, "Telegram bilan bog‘lanib bo‘lmadi. Bot huquqlarini tekshiring va qayta urinib ko‘ring.",
+                                     reply_markup=panel_back())
 
     @dp.message(F.chat.type == ChatType.PRIVATE, F.photo | F.video)
     async def media_input(message):
@@ -293,19 +310,23 @@ async def consume_admin_input(message):
             await admin_service.ensure_permission(uid, "broadcast.send")
             from app.services.bot_broadcasts import create_draft, audience
             draft = await create_draft(message)
+            # Media preview stays a separate message — but the audience
+            # chooser itself is an inline panel edited into the admin panel
+            # message, never a new chat message with buttons.
             await tb().get_bot().copy_message(uid, message.chat.id, message.message_id)
             rows = []
             for kind, label in (("all", "Foydalanuvchilar"), ("groups", "Guruhlar"), ("both", "Hammasi")):
                 count = len(await audience(kind))
                 rows.append([Button(text=f"📤 {label} ({count})", callback_data=f"ctl:send:{draft}:{kind}")])
             rows.append([Button(text="Bekor qilish", callback_data=f"ctl:cancel:{draft}")])
-            await message.answer("Namuna tayyor. Yuboriladigan auditoriyani tanlang:", reply_markup=Keyboard(inline_keyboard=rows))
             _inputs.pop(uid, None)
+            await tb()._edit_or_send(uid, "Namuna tayyor. Yuboriladigan auditoriyani tanlang:",
+                                     reply_markup=Keyboard(inline_keyboard=rows))
             return True
         else:
             return False
         _inputs.pop(uid, None)
-        await message.answer(text, reply_markup=panel_back())
+        await tb()._edit_or_send(uid, text, reply_markup=panel_back())
     except (ValueError, TypeError) as exc:
         await message.answer(escape(str(exc)) if isinstance(exc, ValueError) else "Raqamli Telegram ID yuboring.")
     except HTTPException:
