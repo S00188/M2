@@ -558,6 +558,17 @@ button:focus-visible,.row:focus-visible,.rolecell:focus-visible{outline:2px soli
 .chat-lastwords .chattext{font-style:italic;font-size:13px}
 .chat-mafia-result{background:rgba(80,120,220,.09);border:1px solid rgba(80,120,220,.3);border-left:3px solid var(--town)}
 .chat-mafia-result .chatname{color:var(--town);letter-spacing:.06em}
+/* Phase separator (TUN / KUN / OVOZ BERISH...) — full-width divider between
+   messages so you can always tell which game phase they belong to. */
+.chatsep{display:flex;align-items:center;gap:10px;width:100%;align-self:stretch;margin:8px 0}
+.chatsep-line{flex:1;height:1px;background:var(--line)}
+.chatsep-label{font:600 10px var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+/* Live day vote: "Player1 ➜ Player2 ovoz berdi", clearly visible in chat. */
+.chatvote{display:flex;align-items:center;gap:7px;width:100%;align-self:stretch;padding:7px 12px;border-radius:10px;background:var(--panel);border:1px dashed var(--line);font:600 12.5px var(--ui)}
+.cv-voter{color:var(--town)}
+.cv-arrow{color:var(--muted2)}
+.cv-target{color:var(--gold-hi);overflow-wrap:anywhere}
+.cv-word{color:var(--muted);font-weight:500;margin-left:auto}
 /* Last-words input card shown at the bottom of the messages panel while a
    dead player's 60s/post-night window is open. */
 .lastwords-box{padding:10px 14px;border-top:1px solid var(--line-soft);background:var(--panel)}

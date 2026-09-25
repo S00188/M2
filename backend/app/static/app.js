@@ -2243,6 +2243,24 @@ function chatMessageHtml(s, m) {
       <div class="chattext">“${escapeHtml(m.text)}”</div>
     </div>`;
   }
+  // Phase separators (TUN/KUN/OVOZ BERISH...) — a divider running the full
+  // width of the feed so everyone can tell which phase a message belongs to.
+  if (kind === "phase") {
+    return `<div class="chatsep"><div class="chatsep-line"></div><div class="chatsep-label">${escapeHtml(m.text)}</div><div class="chatsep-line"></div></div>`;
+  }
+  // A live public vote in the feed: "Player1 ➜ Player2 ovoz berdi" —
+  // always shown to every player, so the vote itself is never hidden.
+  if (kind === "vote") {
+    const p = m.payload || {};
+    const voterName = escapeHtml(p.voter_name || (p.voter_id ? nameFor(s, p.voter_id) : "") || m.display_name);
+    const targetName = escapeHtml(p.target_name || nameFor(s, p.target_id) || "");
+    return `<div class="chatvote">
+      <span class="cv-voter">${voterName}</span>
+      <span class="cv-arrow">➜</span>
+      <span class="cv-target">${targetName}</span>
+      <span class="cv-word">ovoz berdi</span>
+    </div>`;
+  }
   const sender = s.players.find((p) => p.player_id === m.player_id);
   const isDead = sender && !sender.alive;
   const isMe = m.player_id === myPlayerId;
@@ -2267,11 +2285,17 @@ function renderChat(s) {
     lastChatLen = chat.length;
   }
 
+  // The input area must NOT be rebuilt on every state push — replacing it
+  // via innerHTML would drop focus and close the mobile keyboard while the
+  // player is typing. Only rebuild when the input *mode* actually changed
+  // (chat open / last-words open / spectator / muted) or the widget is
+  // missing; otherwise the existing input keeps its text and keyboard.
   const inputArea = document.getElementById("chatInputArea");
+  let mode;
+  let html;
   if (me.can_last_words) {
-    // A dead player's final message (night kill aftermath / post-hang 60s
-    // window) leaves its input right here in the messages panel.
-    inputArea.innerHTML = `
+    mode = "last_words";
+    html = `
       <div class="lastwords-box">
         <div class="smallcap">SO'NGGI SO'Z</div>
         <textarea id="chatLastWordsInput" maxlength="200" rows="2"
@@ -2279,17 +2303,24 @@ function renderChat(s) {
         <button class="btn gold" onclick="submitChatLastWords()">Yuborish</button>
       </div>`;
   } else if (me.can_chat) {
-    inputArea.innerHTML = `
+    mode = "chat";
+    html = `
       <div class="chatinputrow">
         <input class="chatinput" id="chatInput" maxlength="500" placeholder="Xabar yozing..."
           onkeydown="if(event.key==='Enter')sendChatMessage()">
         <button class="chatsend" onclick="sendChatMessage()"><svg class="icon" style="width:17px;height:17px;stroke:#fff"><use href="#i-send"/></svg></button>
       </div>`;
   } else if (!me.alive) {
-    inputArea.innerHTML = `<div class="chatspectate">Siz kuzatuvchisiz — spectator sifatida ko'rasiz, yoza olmaysiz</div>`;
+    mode = "spectate";
+    html = `<div class="chatspectate">Siz kuzatuvchisiz — spectator sifatida ko'rasiz, yoza olmaysiz</div>`;
   } else {
+    mode = "off";
     const reason = s.phase === "day_discussion" ? t("chat_silenced") : t("chat_wait_discussion");
-    inputArea.innerHTML = `<div class="chatspectate">${escapeHtml(reason)}</div>`;
+    html = `<div class="chatspectate">${escapeHtml(reason)}</div>`;
+  }
+  if (inputArea.dataset.mode !== mode || !inputArea.querySelector("input,textarea")) {
+    inputArea.dataset.mode = mode;
+    inputArea.innerHTML = html;
   }
 }
 

@@ -252,10 +252,23 @@ KAMIKAZE_STRIKE_DURATION_S = 15
 
 class PhaseManager:
     @staticmethod
+    def add_separator(state: GameState, phase: str, label: str) -> None:
+        """Full-width phase marker in the public chat feed ("TUN", "KUN",
+        "OVOZ BERISH"...), so every player can see which phase each block of
+        messages belongs to. Rendered by the frontend as a divider line."""
+        state.chat_messages.append(ChatMessage(
+            message_id=f"sep-{phase}-{uuid.uuid4()}",
+            player_id="system", display_name="",
+            text=label, day_number=state.day_number,
+            kind="phase", payload={"phase": phase},
+        ))
+
+    @staticmethod
     def to_role_assignment(state: GameState) -> None:
         state.phase = Phase.ROLE_ASSIGNMENT
         TimerManager.start_phase(state, state.settings.role_assignment_duration_s)
         EventManager.log(state, "phase_role_assignment")
+        PhaseManager.add_separator(state, "role_assignment", "🎴 ROLLAR TAQSIMOTI")
 
     @staticmethod
     def to_night(state: GameState) -> None:
@@ -273,6 +286,7 @@ class PhaseManager:
         TimerManager.start_phase(state, state.settings.night_duration_s)
         EventManager.log(state, "phase_night", night=state.night_number)
         ActivityFeedManager.public(state, "night.begins", night=state.night_number)
+        PhaseManager.add_separator(state, "night", "🌙 TUN")
 
     @staticmethod
     def to_morning(state: GameState) -> None:
@@ -283,6 +297,7 @@ class PhaseManager:
         TimerManager.start_phase(state, state.settings.morning_duration_s)
         EventManager.log(state, "phase_morning", night=state.night_number)
         ActivityFeedManager.public(state, "morning.begins", night=state.night_number)
+        PhaseManager.add_separator(state, "morning", "🌅 TONG (natija)")
 
     @staticmethod
     def to_day(state: GameState) -> None:
@@ -293,6 +308,7 @@ class PhaseManager:
         TimerManager.start_phase(state, state.settings.day_duration_s)
         EventManager.log(state, "phase_day", day=state.day_number)
         ActivityFeedManager.public(state, "day.begins", day=state.day_number)
+        PhaseManager.add_separator(state, "day", "☀️ KUN")
 
     @staticmethod
     def to_voting(state: GameState) -> None:
@@ -303,6 +319,7 @@ class PhaseManager:
         TimerManager.start_phase(state, state.settings.voting_duration_s)
         EventManager.log(state, "phase_voting")
         ActivityFeedManager.public(state, "voting.begins", day=state.day_number)
+        PhaseManager.add_separator(state, "voting", "🗳 OVOZ BERISH")
 
     @staticmethod
     def to_lynch_confirmation(state: GameState, candidates: list[str]) -> None:
@@ -318,6 +335,7 @@ class PhaseManager:
         TimerManager.start_phase(state, state.settings.lynch_confirmation_duration_s)
         EventManager.log(state, "phase_lynch_confirmation", candidates=state.revote_candidates)
         ActivityFeedManager.public(state, "lynch.confirmation_begins", day=state.day_number)
+        PhaseManager.add_separator(state, "lynch_confirmation", "⚖️ OSHISH TASDIQLASH")
 
     @staticmethod
     def to_kamikaze_strike(state: GameState) -> None:
@@ -327,6 +345,7 @@ class PhaseManager:
         TimerManager.start_phase(state, state.settings.kamikaze_strike_duration_s)
         EventManager.log(state, "phase_kamikaze_strike")
         ActivityFeedManager.public(state, "kamikaze.strike_begins", day=state.day_number)
+        PhaseManager.add_separator(state, "kamikaze_strike", "💥 KAMIKADZE ZARBASI")
 
     @staticmethod
     def to_vote_results(state: GameState) -> None:
@@ -334,12 +353,14 @@ class PhaseManager:
         # gives the just-eliminated player a window to type last words
         TimerManager.start_phase(state, state.settings.vote_results_duration_s)
         ActivityFeedManager.public(state, "voting.resolved", day=state.day_number)
+        PhaseManager.add_separator(state, "vote_results", "📣 NATIJA")
 
     @staticmethod
     def to_game_over(state: GameState, result: WinResult) -> None:
         state.phase = Phase.GAME_OVER
         state.winner = result
         EventManager.log(state, "game_over", faction=result.faction, reason=result.reason)
+        PhaseManager.add_separator(state, "game_over", "🏁 O'YIN TUGADI")
 
 
 class NightResolver:

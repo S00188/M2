@@ -51,8 +51,10 @@ async def subscription_prompt(user_id, chat_id):
         return False
     rows = [[Button(text=c.title[:60], url=c.join_url)] for c in missing]
     rows.append([Button(text="✅ Obunani tekshirish", callback_data="subscription:check")])
-    await tb().get_bot().send_message(chat_id, "Davom etish uchun quyidagi kanallarga obuna bo‘ling.",
-                                     reply_markup=Keyboard(inline_keyboard=rows))
+    # One panel message, edited in place — never a fresh chat message with
+    # buttons every time the gate triggers.
+    await tb()._edit_or_send(chat_id, "Davom etish uchun quyidagi kanallarga obuna bo‘ling.",
+                             reply_markup=Keyboard(inline_keyboard=rows))
     return True
 
 
@@ -282,7 +284,8 @@ async def consume_admin_input(message):
         return False
     if monotonic() - pending[1] > 900:
         _inputs.pop(uid, None)
-        await message.answer("Kiritish vaqti tugadi. Admin panelni qayta oching.")
+        await tb()._edit_or_send(uid, "Kiritish vaqti tugadi. Admin panelni qayta oching.",
+                                 reply_markup=panel_back())
         return True
     mode = pending[0]
     try:
@@ -328,10 +331,12 @@ async def consume_admin_input(message):
         _inputs.pop(uid, None)
         await tb()._edit_or_send(uid, text, reply_markup=panel_back())
     except (ValueError, TypeError) as exc:
-        await message.answer(escape(str(exc)) if isinstance(exc, ValueError) else "Raqamli Telegram ID yuboring.")
+        await tb()._edit_or_send(uid, escape(str(exc)) if isinstance(exc, ValueError) else "Raqamli Telegram ID yuboring.",
+                                 reply_markup=panel_back())
     except HTTPException:
         _inputs.pop(uid, None)
-        await message.answer("Bu amal uchun ruxsatingiz yo‘q.")
+        await tb()._edit_or_send(uid, "Bu amal uchun ruxsatingiz yo‘q.", reply_markup=panel_back())
     except TelegramAPIError:
-        await message.answer("Yuborilmadi. Bot huquqlari, kanal yoki foydalanuvchi holatini tekshiring.")
+        await tb()._edit_or_send(uid, "Yuborilmadi. Bot huquqlari, kanal yoki foydalanuvchi holatini tekshiring.",
+                                 reply_markup=panel_back())
     return True

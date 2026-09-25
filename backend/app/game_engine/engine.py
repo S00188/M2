@@ -369,9 +369,27 @@ class GameEngine:
         EventManager.log(self.state, "ready_for_vote", player_id=player_id, ready=p.ready_for_vote)
 
     def submit_vote(self, voter_id: str, target_id: Optional[str]) -> None:
+        already_voted = voter_id in self.state.votes
         VoteManager.submit_vote(self.state, voter_id, target_id)
         if target_id is not None:
             self.state.players[voter_id].votes_cast += 1
+            # A strict, public rule: every day vote is announced in the chat
+            # as "voter -> target", visible to all players while the ballot
+            # is open. Guarded by the pre-vote membership so a re-submitted
+            # vote never produces a duplicate chat line.
+            if not already_voted:
+                target = self.state.players.get(target_id)
+                if target is not None:
+                    self.state.chat_messages.append(ChatMessage(
+                        message_id=str(uuid.uuid4()), player_id=voter_id,
+                        display_name=self.state.players[voter_id].display_name,
+                        text=f"{target.display_name} ga ovoz berdi",
+                        day_number=self.state.day_number,
+                        kind="vote",
+                        payload={"voter_id": voter_id, "target_id": target_id,
+                                 "voter_name": self.state.players[voter_id].display_name,
+                                 "target_name": target.display_name},
+                    ))
         EventManager.log(self.state, "vote_submitted", voter_id=voter_id)
 
     def resolve_voting_if_ready(self, force: bool = False) -> bool:

@@ -204,8 +204,20 @@ async def _edit_or_send(chat_id: int, text: str, reply_markup=None) -> Message:
             try:
                 await prev.edit_text(text, reply_markup=reply_markup)
                 return prev
-            except TelegramBadRequest:
-                pass  # message deleted or too old to edit
+            except TelegramBadRequest as exc:
+                # "message is not modified" means the panel already shows
+                # exactly this content — that's a success, NOT a reason to
+                # post a duplicate message (which is what made buttons pile
+                # up as separate chat messages on repeated taps).
+                if "not modified" in str(exc):
+                    return prev
+                # Otherwise the tracked message is unusable (deleted / too
+                # old / media-only). Retire it so the fresh panel below is
+                # the only one left on screen.
+                try:
+                    await prev.delete()
+                except TelegramBadRequest:
+                    pass
         else:
             # Reply-keyboard panel: editing can't change it, so retire the
             # old panel message and let the new one below replace it.
