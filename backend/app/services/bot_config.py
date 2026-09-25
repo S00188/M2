@@ -80,18 +80,27 @@ _TEXT_FALLBACKS: dict[str, dict[str, str]] = {
               "✅ A join button will appear for members",
     },
     "lobby": {
-        "uz": "🌙 <b>MAFIA</b> boshlanmoqda!\n"
-              "▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n"
-              "🔘 Qo'shilish uchun quyidagi tugmani bosing\n"
-              "👥 Kamida <b>6</b> kishi yig'ilsa — start!",
-        "ru": "🌙 <b>МАФИЯ</b> начинается!\n"
-              "▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n"
-              "🔘 Нажмите кнопку ниже, чтобы присоединиться\n"
-              "👥 Минимум <b>6</b> человек — и можно начинать!",
-        "en": "🌙 <b>MAFIA</b> is starting!\n"
-              "▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n"
-              "🔘 Tap the button below to join\n"
-              "👥 At least <b>6</b> people — and it's on!",
+        "uz": "🎭 <b>MAFIA O'YIN</b>\n"
+              "━━━━━━━━━━━━━━━━━\n\n"
+              "🌙 Sirli kechalar, qizg'in munozaralar va hayajonli ovoz berish sizni kutmoqda!\n\n"
+              "👥 <b>4-25 o'yinchi</b> o'ynashi mumkin\n"
+              "⚡️ <b>4 kishi</b> yig'ilsa o'yin boshlanadi\n"
+              "🎯 <b>25 kishi</b> to'lsa avtomatik start!\n\n"
+              "👇 Qo'shilish uchun quyidagi tugmani bosing",
+        "ru": "🎭 <b>ИГРА МАФИЯ</b>\n"
+              "━━━━━━━━━━━━━━━━━\n\n"
+              "🌙 Таинственные ночи, горячие дискуссии и захватывающее голосование ждут вас!\n\n"
+              "👥 <b>От 4 до 25 игроков</b>\n"
+              "⚡️ <b>4 человека</b> — и можно начинать\n"
+              "🎯 <b>25 человек</b> — автоматический старт!\n\n"
+              "👇 Нажмите кнопку ниже, чтобы присоединиться",
+        "en": "🎭 <b>MAFIA GAME</b>\n"
+              "━━━━━━━━━━━━━━━━━\n\n"
+              "🌙 Mysterious nights, heated discussions, and thrilling voting await you!\n\n"
+              "👥 <b>4-25 players</b> can play\n"
+              "⚡️ <b>4 people</b> to start the game\n"
+              "🎯 <b>25 people</b> = auto-start!\n\n"
+              "👇 Tap the button below to join",
     },
 }
 
